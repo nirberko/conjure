@@ -1,0 +1,42 @@
+/* Toggle dot animation */
+.toggle-dot {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+input:checked ~ .toggle-bg {
+  background-color: rgba(0, 242, 255, 0.1);
+}
+
+input:checked ~ .toggle-dot {
+  transform: translateX(16px);
+  background-color: #00f2ff;
+  box-shadow: 0 0 8px rgba(0, 242, 255, 0.5);
+}
+
+input:not(:checked) ~ .toggle-dot {
+  transform: translateX(0);
+}
+
+/* Thinking dots animation */
+.thinking-dots .dot {
+  animation: thinking-blink 1.4s infinite both;
+}
+
+.thinking-dots .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinking-dots .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes thinking-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}

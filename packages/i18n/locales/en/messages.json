@@ -1,0 +1,28 @@
+{
+  "extensionDescription": {
+    "description": "Extension description",
+    "message": "AI-Powered Component Injector — enhance any website with custom UI components"
+  },
+  "extensionName": {
+    "description": "Extension name",
+    "message": "WebForge"
+  },
+  "openSidePanel": {
+    "message": "Open WebForge"
+  },
+  "displayErrorInfo": {
+    "message": "Error occur"
+  },
+  "displayErrorDescription": {
+    "message": "Sorry, something went wrong while loading the page."
+  },
+  "displayErrorDetailsInfo": {
+    "message": "Error details:"
+  },
+  "displayErrorUnknownErrorInfo": {
+    "message": "Unknown error"
+  },
+  "displayErrorReset": {
+    "message": "Run Again"
+  }
+}
