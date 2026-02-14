@@ -17,7 +17,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc:*)",
       "Bash(xargs -I {} bash -c 'echo \"\"=== {} ===\"\" && head -30 {}')",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx vitest run:*)"
     ]
   }
 }

@@ -31,6 +31,8 @@
     "copy-env": "bash bash-scripts/copy_env.sh",
     "set-global-env": "bash bash-scripts/set_global_env.sh",
     "module-manager": "pnpm -F module-manager start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "postinstall": "pnpm copy-env"
   },
   "dependencies": {
@@ -42,12 +44,15 @@
     "@eslint/compat": "^1.2.9",
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.27.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/chrome": "^0.0.323",
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
     "@typescript-eslint/parser": "^8.32.1",
+    "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "deepmerge": "^4.3.1",
@@ -60,9 +65,11 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-tailwindcss": "^3.18.0",
+    "fake-indexeddb": "^6.2.5",
     "fast-glob": "^3.3.3",
     "fflate": "^0.8.2",
     "globals": "^16.1.0",
+    "happy-dom": "^20.6.1",
     "husky": "^9.1.7",
     "jiti": "^2.4.2",
     "lint-staged": "^16.0.0",
@@ -79,7 +86,8 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1",
     "vite": "^6.3.6",
-    "vite-plugin-node-polyfills": "^0.23.0"
+    "vite-plugin-node-polyfills": "^0.23.0",
+    "vitest": "^4.0.18"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json}": [

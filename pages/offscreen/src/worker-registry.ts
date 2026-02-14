@@ -3,9 +3,7 @@ export interface WorkerInstance {
   artifactId: string;
   status: 'running' | 'stopped' | 'error';
   error?: string;
-  handlers: Map<string, Array<(...args: unknown[]) => void>>;
-  timers: Set<ReturnType<typeof setTimeout>>;
-  intervals: Set<ReturnType<typeof setInterval>>;
+  iframe: HTMLIFrameElement;
 }
 
 const workers = new Map<string, WorkerInstance>();
@@ -18,14 +16,12 @@ export function getAllWorkers(): Map<string, WorkerInstance> {
   return workers;
 }
 
-export function createWorkerInstance(extensionId: string, artifactId: string): WorkerInstance {
+export function createWorkerInstance(extensionId: string, artifactId: string, iframe: HTMLIFrameElement): WorkerInstance {
   const instance: WorkerInstance = {
     extensionId,
     artifactId,
     status: 'running',
-    handlers: new Map(),
-    timers: new Set(),
-    intervals: new Set(),
+    iframe,
   };
   workers.set(extensionId, instance);
   return instance;
@@ -35,20 +31,11 @@ export function stopWorkerInstance(extensionId: string): boolean {
   const instance = workers.get(extensionId);
   if (!instance) return false;
 
-  // Clear all timers
-  for (const timer of instance.timers) {
-    clearTimeout(timer);
-  }
-  instance.timers.clear();
+  // Tell the sandbox to clean up its timers/handlers
+  instance.iframe.contentWindow?.postMessage({ type: 'STOP_WORKER' }, '*');
 
-  // Clear all intervals
-  for (const interval of instance.intervals) {
-    clearInterval(interval);
-  }
-  instance.intervals.clear();
-
-  // Clear all event handlers
-  instance.handlers.clear();
+  // Remove iframe from DOM
+  instance.iframe.remove();
 
   instance.status = 'stopped';
   workers.delete(extensionId);

@@ -38,7 +38,7 @@ export interface ToolCallDisplay {
   name: string;
   args: Record<string, unknown>;
   result?: string;
-  status: 'pending' | 'done' | 'error';
+  status: 'pending' | 'done' | 'error' | 'skipped';
 }
 
 export interface ThinkingData {

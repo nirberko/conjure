@@ -118,6 +118,20 @@ webforge.on('message', (data) => {
 \`\`\`
 CRITICAL: Do NOT use \`import\` or \`require\` — the webforge API is the only interface available.
 
+## Content Security Policy (CSP) Compliance
+All generated code runs inside a Chrome extension context with strict CSP rules. You MUST follow these rules in ALL artifact types (components, scripts, workers):
+- **NEVER** use \`eval()\`, \`new Function()\`, \`setTimeout(string)\`, or \`setInterval(string)\`
+- **NEVER** use \`document.write()\` or inline event handler strings (e.g. \`onclick="..."\`)
+- **NEVER** construct and execute code from strings in any way
+- **NEVER** use \`javascript:\` URLs
+- **ALWAYS** use function references for callbacks and event handlers
+- **ALWAYS** use \`fetch()\` for HTTP requests — XMLHttpRequest is allowed but fetch is preferred
+- For background workers: use ONLY the \`webforge\` API. Do not attempt dynamic code evaluation of any kind.
+- For React components: define all logic as proper functions/arrow functions, never as strings.
+- For JS scripts: same rules apply — no string-based code execution.
+
+If a user asks for something that would require \`eval\` or dynamic code generation, find an alternative approach or explain that it's not possible due to browser security restrictions.
+
 ## Important
 - Always explain your plan before generating code
 - If the user's request is ambiguous, ask for clarification

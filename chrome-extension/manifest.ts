@@ -35,7 +35,7 @@ const manifest = {
     },
   ],
   sandbox: {
-    pages: ['sandbox/index.html'],
+    pages: ['sandbox/index.html', 'sandbox-worker/index.html'],
   },
   side_panel: {
     default_path: 'side-panel/index.html',

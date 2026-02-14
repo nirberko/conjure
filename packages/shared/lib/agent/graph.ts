@@ -14,7 +14,7 @@ import type { BaseMessage } from '@langchain/core/messages';
  * by tool response messages for each tool_call_id. If a previous run
  * was interrupted, the checkpoint may have dangling tool_calls.
  */
-function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
+export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
   const result: BaseMessage[] = [];
 
   for (let i = 0; i < messages.length; i++) {

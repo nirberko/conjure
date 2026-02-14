@@ -33,6 +33,8 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
       <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
     ) : toolCall.status === 'error' ? (
       <span className="inline-block h-1.5 w-1.5 rounded-full bg-red-500" />
+    ) : toolCall.status === 'skipped' ? (
+      <span className="inline-block h-1.5 w-1.5 rounded-full bg-slate-400" />
     ) : (
       <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
     );
@@ -57,7 +59,7 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
         className={`flex w-full items-center gap-2 text-left font-mono text-xs text-slate-500 ${hasDetails ? 'cursor-pointer hover:text-slate-400' : 'cursor-default'}`}>
         <span className="material-symbols-outlined text-[14px]">terminal</span>
         <span className="uppercase tracking-wider">
-          {toolCall.status === 'pending' ? 'Running' : 'Executed'}: {toolCall.name}
+          {toolCall.status === 'pending' ? 'Running' : toolCall.status === 'skipped' ? 'Skipped' : 'Executed'}: {toolCall.name}
         </span>
         {statusIcon}
         {hasDetails && (
