@@ -59,7 +59,7 @@ export function ArtifactCard({
       : 'hover:bg-white/[0.02] border-y border-transparent hover:border-terminal-border';
 
   return (
-    <div className={`group px-4 py-3 transition-colors ${cardBg}`}>
+    <div className={`group cursor-pointer px-4 py-3 transition-colors ${cardBg}`} onClick={() => setShowCode(s => !s)}>
       {isTerminated ? (
         /* Error / Terminated state */
         <div className="flex flex-col gap-2">
@@ -86,12 +86,12 @@ export function ArtifactCard({
           {/* Actions */}
           <div className="flex items-center gap-4">
             <button
-              onClick={() => onStartWorker?.(artifact)}
+              onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
               className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
               Restart
             </button>
             <button
-              onClick={() => setShowCode(!showCode)}
+              onClick={e => { e.stopPropagation(); setShowCode(!showCode); }}
               className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-slate-300 hover:underline">
               {showCode ? 'Hide' : 'Logs'}
             </button>
@@ -133,25 +133,25 @@ export function ArtifactCard({
                     {isRunning ? (
                       <>
                         <button
-                          onClick={() => onStartWorker?.(artifact)}
+                          onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
                           className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
                           Reload
                         </button>
                         <button
-                          onClick={() => onStopWorker?.(artifact.extensionId)}
+                          onClick={e => { e.stopPropagation(); onStopWorker?.(artifact.extensionId); }}
                           className="font-mono text-[10px] uppercase tracking-tighter text-red-500/70 underline-offset-4 transition-all hover:text-red-400 hover:underline">
                           Stop
                         </button>
                       </>
                     ) : (
                       <button
-                        onClick={() => onStartWorker?.(artifact)}
+                        onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
                         className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
                         Start
                       </button>
                     )}
                     <button
-                      onClick={() => onViewWorker?.(artifact)}
+                      onClick={e => { e.stopPropagation(); onViewWorker?.(artifact); }}
                       className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
                       View
                     </button>

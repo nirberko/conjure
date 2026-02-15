@@ -38,7 +38,7 @@ export function createEditArtifactTool(ctx: ToolContext) {
     },
     {
       name: 'edit_artifact',
-      description: 'Modify an existing artifact by providing the complete updated code. Optionally update elementXPath to change where a React component is mounted. For React components: code MUST end with `return ComponentName;`, use inline styles only, no imports. For workers: use only conjure API. Same format rules as generate tools.',
+      description: 'Modify an existing artifact. Updates code and can also change elementXPath to reposition where a React component is mounted. When the user asks to move, reposition, or change where a component appears, update elementXPath. Pass empty string to clear it (mount to body). For React components: code MUST end with `return ComponentName;`, use inline styles only, no imports. For workers: use only conjure API.',
       schema: z.object({
         artifactId: z.string().describe('The ID of the artifact to edit'),
         newCode: z.string().describe('The complete updated code. Same format rules as generate tools apply — React components must end with return, workers use conjure API only.'),
