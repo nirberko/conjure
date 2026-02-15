@@ -1,17 +1,15 @@
-import { describe, it, expect, vi } from 'vitest';
 import { createInspectThemeTool } from '../inspect-theme.js';
+import { describe, it, expect, vi } from 'vitest';
 import type { ToolContext } from '../../types.js';
 
-function createMockToolContext(overrides: Partial<ToolContext> = {}): ToolContext {
-  return {
-    extensionId: 'test-ext',
-    tabId: 123,
-    sendToContentScript: vi.fn().mockResolvedValue({}),
-    waitForMessage: vi.fn().mockResolvedValue({}),
-    sendToServiceWorker: vi.fn().mockResolvedValue({}),
-    ...overrides,
-  };
-}
+const createMockToolContext = (overrides: Partial<ToolContext> = {}): ToolContext => ({
+  extensionId: 'test-ext',
+  tabId: 123,
+  sendToContentScript: vi.fn().mockResolvedValue({}),
+  waitForMessage: vi.fn().mockResolvedValue({}),
+  sendToServiceWorker: vi.fn().mockResolvedValue({}),
+  ...overrides,
+});
 
 describe('inspect_page_theme tool', () => {
   it('returns error when no active tab', async () => {

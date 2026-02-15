@@ -1,0 +1,25 @@
+name: Setup Node.js Environment
+description: Checkout code, setup pnpm + Node.js with caching, and install dependencies
+
+inputs:
+  fetch-depth:
+    description: Number of commits to fetch (0 for full history)
+    default: '1'
+  persist-credentials:
+    description: Whether to persist git credentials after checkout
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: ${{ inputs.fetch-depth }}
+        persist-credentials: ${{ inputs.persist-credentials }}
+    - uses: pnpm/action-setup@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: pnpm
+    - run: pnpm install --frozen-lockfile
+      shell: bash

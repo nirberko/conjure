@@ -1,6 +1,6 @@
 // ---------- helpers ----------
 
-function normalizeToHex(raw: string): string | null {
+const normalizeToHex = (raw: string): string | null => {
   const v = raw.trim().toLowerCase();
   if (!v || v === 'transparent' || v === 'currentcolor' || v === 'inherit' || v === 'initial') return null;
 
@@ -25,13 +25,35 @@ function normalizeToHex(raw: string): string | null {
   }
 
   return null;
-}
+};
 
 // ---------- sub-extractors ----------
 
-function extractCSSCustomProperties(): Record<string, string> {
+const extractCSSCustomProperties = (): Record<string, string> => {
   const vars: Record<string, string> = {};
-  const designPrefixes = ['--color', '--bg', '--text', '--font', '--spacing', '--radius', '--shadow', '--border', '--primary', '--secondary', '--accent', '--surface', '--muted', '--foreground', '--background', '--ring', '--input', '--card', '--popover', '--destructive', '--chart'];
+  const designPrefixes = [
+    '--color',
+    '--bg',
+    '--text',
+    '--font',
+    '--spacing',
+    '--radius',
+    '--shadow',
+    '--border',
+    '--primary',
+    '--secondary',
+    '--accent',
+    '--surface',
+    '--muted',
+    '--foreground',
+    '--background',
+    '--ring',
+    '--input',
+    '--card',
+    '--popover',
+    '--destructive',
+    '--chart',
+  ];
 
   try {
     for (const sheet of Array.from(document.styleSheets)) {
@@ -64,17 +86,40 @@ function extractCSSCustomProperties(): Record<string, string> {
   const rest = entries.filter(([k]) => !designPrefixes.some(p => k.startsWith(p)));
   const kept = [...prioritized, ...rest].slice(0, 50);
   return Object.fromEntries(kept);
-}
+};
 
 const SAMPLE_TAGS = [
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-  'p', 'span', 'a', 'li',
-  'div', 'section', 'article', 'main', 'header', 'footer', 'nav', 'aside',
-  'button', 'input', 'select', 'textarea', 'label',
-  'img', 'table', 'th', 'td', 'form',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'p',
+  'span',
+  'a',
+  'li',
+  'div',
+  'section',
+  'article',
+  'main',
+  'header',
+  'footer',
+  'nav',
+  'aside',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  'label',
+  'img',
+  'table',
+  'th',
+  'td',
+  'form',
 ];
 
-function sampleElements(root: Element, maxTotal: number): Element[] {
+const sampleElements = (root: Element, maxTotal: number): Element[] => {
   const perTag = Math.max(2, Math.floor(maxTotal / SAMPLE_TAGS.length));
   const result: Element[] = [];
 
@@ -94,7 +139,7 @@ function sampleElements(root: Element, maxTotal: number): Element[] {
   }
 
   return result.slice(0, maxTotal);
-}
+};
 
 interface ColorEntry {
   color: string;
@@ -102,7 +147,7 @@ interface ColorEntry {
   usage: string[];
 }
 
-function extractColorPalette(elements: Element[]): ColorEntry[] {
+const extractColorPalette = (elements: Element[]): ColorEntry[] => {
   const colorMap = new Map<string, { count: number; usage: Set<string> }>();
 
   const record = (raw: string, usage: string) => {
@@ -129,7 +174,7 @@ function extractColorPalette(elements: Element[]): ColorEntry[] {
     .map(([color, { count, usage }]) => ({ color, count, usage: Array.from(usage) }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
-}
+};
 
 interface TypographyResult {
   families: string[];
@@ -140,7 +185,7 @@ interface TypographyResult {
   bodyLineHeight: string;
 }
 
-function extractTypography(elements: Element[], root: Element): TypographyResult {
+const extractTypography = (elements: Element[], root: Element): TypographyResult => {
   const familyCount = new Map<string, number>();
   const sizes = new Set<string>();
   const weights = new Set<string>();
@@ -180,7 +225,7 @@ function extractTypography(elements: Element[], root: Element): TypographyResult
     bodyFontSize: bodyCs.fontSize,
     bodyLineHeight: bodyCs.lineHeight,
   };
-}
+};
 
 interface SpacingResult {
   commonPaddings: string[];
@@ -188,7 +233,7 @@ interface SpacingResult {
   commonGaps: string[];
 }
 
-function extractSpacing(elements: Element[]): SpacingResult {
+const extractSpacing = (elements: Element[]): SpacingResult => {
   const paddings = new Map<string, number>();
   const margins = new Map<string, number>();
   const gaps = new Map<string, number>();
@@ -217,7 +262,7 @@ function extractSpacing(elements: Element[]): SpacingResult {
     commonMargins: topN(margins, 5),
     commonGaps: topN(gaps, 5),
   };
-}
+};
 
 interface BorderShadowResult {
   borderRadii: string[];
@@ -225,7 +270,7 @@ interface BorderShadowResult {
   borderStyles: string[];
 }
 
-function extractBorderShadow(elements: Element[]): BorderShadowResult {
+const extractBorderShadow = (elements: Element[]): BorderShadowResult => {
   const radii = new Map<string, number>();
   const shadows = new Map<string, number>();
   const borders = new Map<string, number>();
@@ -256,15 +301,29 @@ function extractBorderShadow(elements: Element[]): BorderShadowResult {
     boxShadows: topN(shadows, 5),
     borderStyles: topN(borders, 5),
   };
-}
+};
 
-function getStyleSnapshot(el: Element): Record<string, string> {
+const getStyleSnapshot = (el: Element): Record<string, string> => {
   const cs = window.getComputedStyle(el);
   const props = [
-    'display', 'padding', 'margin', 'background', 'backgroundColor', 'color',
-    'fontSize', 'fontFamily', 'fontWeight', 'lineHeight', 'letterSpacing',
-    'border', 'borderRadius', 'boxShadow', 'outline',
-    'cursor', 'textDecoration', 'textTransform',
+    'display',
+    'padding',
+    'margin',
+    'background',
+    'backgroundColor',
+    'color',
+    'fontSize',
+    'fontFamily',
+    'fontWeight',
+    'lineHeight',
+    'letterSpacing',
+    'border',
+    'borderRadius',
+    'boxShadow',
+    'outline',
+    'cursor',
+    'textDecoration',
+    'textTransform',
   ];
   const result: Record<string, string> = {};
   for (const prop of props) {
@@ -272,9 +331,9 @@ function getStyleSnapshot(el: Element): Record<string, string> {
     if (val) result[prop] = val;
   }
   return result;
-}
+};
 
-function extractInteractiveStyles(root: Element): Record<string, Record<string, string> | null> {
+const extractInteractiveStyles = (root: Element): Record<string, Record<string, string> | null> => {
   const findVisible = (selector: string): Element | null => {
     for (const el of Array.from(root.querySelectorAll(selector))) {
       const rect = el.getBoundingClientRect();
@@ -295,11 +354,11 @@ function extractInteractiveStyles(root: Element): Record<string, Record<string, 
     link: link ? getStyleSnapshot(link) : null,
     input: input ? getStyleSnapshot(input) : null,
   };
-}
+};
 
 // ---------- main ----------
 
-export function extractPageTheme(scopeSelector?: string) {
+export const extractPageTheme = (scopeSelector?: string) => {
   const root = scopeSelector ? document.querySelector(scopeSelector) : document.body;
   if (!root) {
     return { error: `Element not found: ${scopeSelector}` };
@@ -321,4 +380,4 @@ export function extractPageTheme(scopeSelector?: string) {
     borderShadow,
     interactiveElements,
   };
-}
+};

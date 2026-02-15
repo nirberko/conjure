@@ -21,7 +21,7 @@ export const createInspectThemeTool = (ctx: ToolContext) =>
     {
       name: 'inspect_page_theme',
       description:
-        'Analyze the page\'s visual design system — extracts color palette, typography scale, spacing patterns, border/shadow conventions, CSS custom properties, and interactive element styles. Use this to generate components that match the target website\'s look and feel.',
+        "Analyze the page's visual design system — extracts color palette, typography scale, spacing patterns, border/shadow conventions, CSS custom properties, and interactive element styles. Use this to generate components that match the target website's look and feel.",
       schema: z.object({
         selector: z
           .string()
