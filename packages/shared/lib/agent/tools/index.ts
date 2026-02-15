@@ -6,6 +6,7 @@ import { createGenerateJsTool } from './generate-js.js';
 import { createGenerateReactTool } from './generate-react.js';
 import { createInspectDomTool } from './inspect-dom.js';
 import { createInspectStylesTool, createReadPageTextTool } from './inspect-styles.js';
+import { createInspectThemeTool } from './inspect-theme.js';
 import { createPickElementTool } from './pick-element.js';
 import { createRemoveArtifactTool } from './remove-artifact.js';
 import { createRequestUserInputTool, REQUEST_USER_INPUT_TOOL_NAME } from './request-user-input.js';
@@ -21,6 +22,7 @@ export const createAgentTools = (ctx: ToolContext) => [
   createEditArtifactTool(ctx),
   createInspectDomTool(ctx),
   createInspectStylesTool(ctx),
+  createInspectThemeTool(ctx),
   createReadPageTextTool(ctx),
   createDeployArtifactTool(ctx),
   createPickElementTool(ctx),
@@ -36,6 +38,7 @@ export {
   createEditArtifactTool,
   createInspectDomTool,
   createInspectStylesTool,
+  createInspectThemeTool,
   createReadPageTextTool,
   createDeployArtifactTool,
   createPickElementTool,

@@ -1,6 +1,7 @@
 import { loadComponentsForPage } from '../../component-loader.js';
 import { activate as activatePicker } from '../../element-picker.js';
 import { injectArtifact, removeArtifact } from '../../injector.js';
+import { extractPageTheme } from '../../theme-extractor.js';
 import type { Artifact } from '@extension/shared';
 
 console.log('[Conjure] Content script loaded');
@@ -109,6 +110,16 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         } else {
           sendResponse(getComputedStyleSummary(el));
         }
+      } catch (err) {
+        sendResponse({ error: String(err) });
+      }
+      break;
+    }
+
+    case 'INSPECT_THEME': {
+      const { selector: themeSelector } = (message.payload ?? {}) as { selector?: string };
+      try {
+        sendResponse(extractPageTheme(themeSelector));
       } catch (err) {
         sendResponse({ error: String(err) });
       }

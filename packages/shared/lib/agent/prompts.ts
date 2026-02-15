@@ -25,9 +25,10 @@ needsWorker: true
 artifactType: "background-worker"
 steps: [
   { tool: "request_user_input", reasoning: "Need a GitHub API token for authenticated requests" },
+  { tool: "inspect_page_theme", reasoning: "Get the page's color palette, fonts, and spacing so the dashboard matches the site" },
   { tool: "generate_background_worker", reasoning: "Worker will fetch trending repos from GitHub API, store results in conjure.db, and broadcast updates" },
   { tool: "deploy_artifact", reasoning: "Start the worker" },
-  { tool: "generate_react_component", reasoning: "Dashboard component reads from context.db and listens for worker updates via context.onWorkerMessage" },
+  { tool: "generate_react_component", reasoning: "Dashboard component reads from context.db and listens for worker updates via context.onWorkerMessage, styled to match the page theme" },
   { tool: "deploy_artifact", reasoning: "Inject the dashboard component" }
 ]
 existingArtifacts: "No existing artifacts in this extension"
@@ -49,6 +50,7 @@ steps: [{ tool: "generate_react_component", reasoning: "Generate and deploy" }]
 | \`pageInteraction\` is true | You MUST call \`inspect_page_dom\` before generating code |
 | \`domNeeded\` is true | You MUST call \`inspect_page_dom\` before generating code |
 | Repositioning a component | You MUST call \`inspect_page_dom\` to find the new target element |
+| Generating a visible component that should match the page's look | You SHOULD call \`inspect_page_theme\` to learn the design system |
 | Standalone floating UI only | You MAY skip inspection |
 
 **First inspection must be broad.** When you haven't inspected the page yet, call \`inspect_page_dom\` WITHOUT a \`selector\` to get the full page DOM overview first. Only after reviewing the full structure should you make a targeted follow-up call with a specific \`selector\` if you need more detail on a particular element. Never pass a selector on your first inspection — you don't know the DOM yet.
@@ -89,6 +91,7 @@ When generating components that inject into existing page elements, respect HTML
 | CREATE a background worker | \`generate_background_worker\` |
 | MODIFY existing artifact code or position | \`edit_artifact\` |
 | UNDERSTAND the page structure | \`inspect_page_dom\` — NOT guessing |
+| UNDERSTAND the page visual design system | \`inspect_page_theme\` — for colors, fonts, spacing |
 | FIND a CSS selector / XPath interactively | \`pick_element\` |
 | DEPLOY an artifact | \`deploy_artifact\` |
 | REMOVE an artifact | \`remove_artifact\` |
@@ -260,6 +263,20 @@ When \`elementXPath\` matches multiple elements, all instances share the same \`
 3. **Use \`scopeId\` as part of your DB key** — e.g. \`context.db.where('notes', 'scopeId', scopeId)\` or include it in records as a field.
 
 Do NOT use \`getData\`/\`setData\` for per-instance data — they are shared across all instances on the same page. Use \`context.db\` with the extracted identifier instead.
+
+### Matching Page Styles
+When generating a visible component that should blend with the target website:
+1. Call \`inspect_page_theme\` to get the page's design system
+2. If \`cssVariables\` are present, prefer using those exact values (e.g. \`var(--primary)\`) in inline styles — they'll stay consistent if the site has dark mode or theming
+3. Match \`typography.families\` — use the same font-family stack as the page
+4. Use colors from \`colorPalette\` — pick background, text, and accent colors that appear frequently
+5. Apply \`borderShadow.borderRadii\` and \`borderShadow.boxShadows\` to match the page's visual feel
+6. Reference \`interactiveElements.button\` / \`interactiveElements.input\` styles when generating buttons and inputs so they look native to the page
+
+**\`inspect_page_theme\`** = global design system (colors, fonts, spacing across the whole page).
+**\`inspect_page_styles\`** = computed styles of a single specific element.
+
+Use \`inspect_page_theme\` first for the big picture, then \`inspect_page_styles\` if you need exact values from a particular element.
 
 ## CSP Compliance
 All code runs in a Chrome extension with strict Content Security Policy.
