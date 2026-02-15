@@ -1,5 +1,10 @@
 # Conjure
 
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%203.0-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0)
+[![GitHub Release](https://img.shields.io/github/v/release/nirberko/conjure?style=flat-square)](https://github.com/nirberko/conjure/releases) 
+[![Build](https://img.shields.io/github/actions/workflow/status/nirberko/conjure/release.yml?branch=main&style=flat-square&label=build)](https://github.com/nirberko/conjure/actions/workflows/release.yml) 
+[![DeepWiki](https://img.shields.io/badge/DeepWiki-Conjure-111111?style=flat-square)](https://deepwiki.com/nirberko/conjure)
+
 **AI-Powered Component Injector - Enhance any website with custom UI components**
 
 Conjure is a Chrome extension that lets you create and inject custom React components, JavaScript scripts, CSS styles, and background workers into any website using AI. Describe what you want in natural language; the AI agent generates code, deploys it to the page (or runs it in a persistent worker), and re-injects it automatically on every visit to matching URLs.
@@ -389,4 +394,4 @@ pnpm set-global-env KEY=value
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [GNU Affero General Public License v3.0 (AGPL-3.0)](LICENSE). See [LICENSE](LICENSE) for the full text.
