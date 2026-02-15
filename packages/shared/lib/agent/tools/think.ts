@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 export function createThinkTool() {
   return tool(
-    async ({ goal, pageInteraction, domNeeded, artifactType, plan }) => {
-      return JSON.stringify({ success: true, goal, pageInteraction, domNeeded, artifactType, plan });
+    async ({ goal, pageInteraction, domNeeded, artifactType, steps, existingArtifacts, risks }) => {
+      return JSON.stringify({ success: true, goal, pageInteraction, domNeeded, artifactType, steps, existingArtifacts, risks });
     },
     {
       name: 'think',
@@ -28,10 +28,25 @@ export function createThinkTool() {
             'none',
           ])
           .describe('Which artifact type fits this request'),
-        plan: z
+        steps: z
+          .array(
+            z.object({
+              tool: z.string().describe('Tool name to call'),
+              reasoning: z.string().describe('Why this step is needed'),
+            }),
+          )
+          .describe('Ordered list of tool calls with reasoning for each step'),
+        existingArtifacts: z
           .string()
+          .optional()
           .describe(
-            'Step-by-step plan: list each tool call you will make in order',
+            'Which existing artifacts are relevant? Should I edit one instead of creating new?',
+          ),
+        risks: z
+          .string()
+          .optional()
+          .describe(
+            'What could go wrong? (e.g. element inside iframe, nested interactive elements, XPath may match multiple nodes)',
           ),
       }),
     },

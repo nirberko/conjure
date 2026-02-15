@@ -13,6 +13,13 @@ type MainView = 'extensions' | 'settings';
 const SidePanel = () => {
   const [mainView, setMainView] = useState<MainView>('extensions');
   const [selectedExtension, setSelectedExtension] = useState<Extension | null>(null);
+  const version = (() => {
+    try {
+      return chrome.runtime.getManifest().version;
+    } catch {
+      return 'dev';
+    }
+  })();
   const { extensions, loading: extLoading, createExtension, toggleExtension, deleteExtension } = useExtensions();
 
   // If an extension is selected, show its detail view
@@ -88,7 +95,7 @@ const SidePanel = () => {
           <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">Ready</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[9px] tracking-tighter text-slate-700">1.2.4-stable</span>
+          <span className="font-mono text-[9px] tracking-tighter text-slate-700">v{version}</span>
           <span className="material-symbols-outlined text-[14px] text-slate-700">sensors</span>
         </div>
       </footer>

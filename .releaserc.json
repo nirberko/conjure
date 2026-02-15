@@ -1,0 +1,32 @@
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "bash bash-scripts/update_version.sh ${nextRelease.version} && pnpm install --no-frozen-lockfile && pnpm build && RELEASE_VERSION=${nextRelease.version} pnpm -F zipper zip"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "**/package.json", "!**/node_modules/**"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist-zip/*.zip",
+            "label": "Chrome Extension (${nextRelease.version})"
+          }
+        ]
+      }
+    ]
+  ]
+}

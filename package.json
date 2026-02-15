@@ -1,6 +1,6 @@
 {
   "name": "conjure",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "description": "Conjure — AI-Powered Component Injector Chrome Extension",
   "license": "MIT",
   "private": true,
@@ -87,7 +87,13 @@
     "typescript-eslint": "^8.32.1",
     "vite": "^6.3.6",
     "vite-plugin-node-polyfills": "^0.23.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "semantic-release": "^24.2.3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/exec": "^7.0.3",
+"@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json}": [

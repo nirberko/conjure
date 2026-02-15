@@ -3,6 +3,7 @@ import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
 import { ThinkingBlock } from './ThinkingBlock';
 import { UserInputForm } from './UserInputForm';
+import { getToolMetadata } from '../utils/tool-metadata';
 import { useAgentChat } from '../hooks/useAgentChat';
 import { useState, useRef, useEffect } from 'react';
 import type { AgentMessage, ToolCallDisplay } from '../hooks/useAgentChat';
@@ -29,6 +30,7 @@ function formatRelativeTime(ms: number): string {
 
 function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
   const [expanded, setExpanded] = useState(false);
+  const toolMeta = getToolMetadata(toolCall.name);
 
   const statusIcon =
     toolCall.status === 'pending' ? (
@@ -59,9 +61,9 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
         type="button"
         onClick={() => hasDetails && setExpanded(e => !e)}
         className={`flex w-full items-center gap-2 text-left font-mono text-xs text-slate-500 ${hasDetails ? 'cursor-pointer hover:text-slate-400' : 'cursor-default'}`}>
-        <span className="material-symbols-outlined text-[14px]">terminal</span>
+        <span className="material-symbols-outlined text-[14px]">{toolMeta.icon}</span>
         <span className="uppercase tracking-wider">
-          {toolCall.status === 'pending' ? 'Running' : toolCall.status === 'skipped' ? 'Skipped' : 'Executed'}: {toolCall.name}
+          {toolMeta.label}
         </span>
         {statusIcon}
         {hasDetails && (

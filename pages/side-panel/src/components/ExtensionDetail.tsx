@@ -33,9 +33,6 @@ export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
             </button>
             <div className="flex min-w-0 flex-1 flex-col">
               <h1 className="truncate text-xs font-semibold tracking-tight text-slate-200">{extension.name}</h1>
-              <p className="mt-0.5 truncate font-mono text-[9px] uppercase tracking-widest text-slate-600">
-                Runtime: Conjure_v4
-              </p>
             </div>
           </div>
           <button className="text-slate-500 transition-colors hover:text-white">
