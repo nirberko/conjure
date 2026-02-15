@@ -21,8 +21,6 @@
     "dev:firefox": "pnpm set-global-env CLI_CEB_DEV=true CLI_CEB_FIREFOX=true && pnpm base-dev",
     "zip": "pnpm build && pnpm -F zipper zip",
     "zip:firefox": "pnpm build:firefox && pnpm -F zipper zip",
-    "e2e": "pnpm zip && turbo e2e",
-    "e2e:firefox": "pnpm zip:firefox && turbo e2e",
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint:fix --continue",
     "format": "turbo format --continue -- --cache --cache-location node_modules/.cache/.prettiercache",
@@ -31,8 +29,6 @@
     "copy-env": "bash bash-scripts/copy_env.sh",
     "set-global-env": "bash bash-scripts/set_global_env.sh",
     "module-manager": "pnpm -F module-manager start",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "postinstall": "pnpm copy-env"
   },
   "dependencies": {
