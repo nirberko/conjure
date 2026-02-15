@@ -17,6 +17,7 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-node-env
       - run: pnpm lint
       - run: pnpm type-check
@@ -26,10 +27,11 @@ jobs:
     needs: quality-gate
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/setup-node-env
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           persist-credentials: false
+      - uses: ./.github/actions/setup-node-env
       - name: Run semantic-release
         id: semantic-release
         env:
