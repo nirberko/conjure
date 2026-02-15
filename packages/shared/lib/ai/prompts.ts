@@ -1,6 +1,6 @@
 import type { AIGenerationContext } from './types.js';
 
-export function getSystemPrompt(context?: AIGenerationContext): string {
+export const getSystemPrompt = (context?: AIGenerationContext): string => {
   const base = `You are Conjure, an AI that generates self-contained React components to be injected into web pages.
 
 ## Rules
@@ -65,4 +65,4 @@ ${context.existingCode ? `- Existing component code (user wants to modify this):
   }
 
   return base;
-}
+};

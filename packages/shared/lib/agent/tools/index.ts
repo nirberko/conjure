@@ -13,24 +13,22 @@ import { createThinkTool } from './think.js';
 import { createVerifyDeploymentTool } from './verify-deployment.js';
 import type { ToolContext } from '../types.js';
 
-export function createAgentTools(ctx: ToolContext) {
-  return [
-    createThinkTool(),
-    createGenerateReactTool(ctx),
-    createGenerateJsTool(ctx),
-    createGenerateCssTool(ctx),
-    createGenerateBackgroundWorkerTool(ctx),
-    createEditArtifactTool(ctx),
-    createInspectDomTool(ctx),
-    createInspectStylesTool(ctx),
-    createReadPageTextTool(ctx),
-    createDeployArtifactTool(ctx),
-    createVerifyDeploymentTool(ctx),
-    createPickElementTool(ctx),
-    createRemoveArtifactTool(ctx),
-    createRequestUserInputTool(ctx),
-  ];
-}
+export const createAgentTools = (ctx: ToolContext) => [
+  createThinkTool(),
+  createGenerateReactTool(ctx),
+  createGenerateJsTool(ctx),
+  createGenerateCssTool(ctx),
+  createGenerateBackgroundWorkerTool(ctx),
+  createEditArtifactTool(ctx),
+  createInspectDomTool(ctx),
+  createInspectStylesTool(ctx),
+  createReadPageTextTool(ctx),
+  createDeployArtifactTool(ctx),
+  createVerifyDeploymentTool(ctx),
+  createPickElementTool(ctx),
+  createRemoveArtifactTool(ctx),
+  createRequestUserInputTool(ctx),
+];
 
 export {
   createGenerateReactTool,

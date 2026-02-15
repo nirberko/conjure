@@ -12,7 +12,7 @@ interface ExtensionDetailProps {
 
 type SubTab = 'chat' | 'artifacts' | 'database' | 'env';
 
-export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
+export const ExtensionDetail = ({ extension, onBack }: ExtensionDetailProps) => {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('chat');
 
   const subTabs: { id: SubTab; label: string }[] = [
@@ -78,4 +78,4 @@ export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
       </div>
     </div>
   );
-}
+};

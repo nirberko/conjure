@@ -1,7 +1,7 @@
+import { CodeBlock } from './CodeBlock';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
-import { CodeBlock } from './CodeBlock';
 
 const markdownComponents: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -13,13 +13,12 @@ const markdownComponents: Components = {
   ul: ({ children }) => <ul className="mb-2 ml-4 list-disc space-y-0.5 text-slate-400">{children}</ul>,
   ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal space-y-0.5 text-slate-400">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-  code: ({ node, className, children, ...rest }) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  code: ({ _node, className, children, ...rest }) => {
     const isBlock = className != null;
     if (isBlock) {
       const language = className.replace(/^language-/, '') || 'text';
-      return (
-        <CodeBlock code={String(children).replace(/\n$/, '')} language={language} className="mb-2" />
-      );
+      return <CodeBlock code={String(children).replace(/\n$/, '')} language={language} className="mb-2" />;
     }
     return (
       <code className="rounded bg-slate-800/80 px-1.5 py-0.5 font-mono text-[11px] text-slate-300" {...rest}>
@@ -32,11 +31,7 @@ const markdownComponents: Components = {
     <blockquote className="border-primary/50 border-l-2 pl-3 text-slate-500">{children}</blockquote>
   ),
   a: ({ href, children }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-primary hover:underline">
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
       {children}
     </a>
   ),
@@ -47,12 +42,10 @@ interface MarkdownContentProps {
   className?: string;
 }
 
-export function MarkdownContent({ content, className }: MarkdownContentProps) {
-  return (
-    <div className={`markdown-content text-sm leading-relaxed ${className ?? ''}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-        {content}
-      </ReactMarkdown>
-    </div>
-  );
-}
+export const MarkdownContent = ({ content, className }: MarkdownContentProps) => (
+  <div className={`markdown-content text-sm leading-relaxed ${className ?? ''}`}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+      {content}
+    </ReactMarkdown>
+  </div>
+);

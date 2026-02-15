@@ -208,8 +208,6 @@ const removeArtifact = (artifactId: string) => {
   }
 };
 
-const isArtifactInjected = (artifactId: string): boolean => {
-  return injectedArtifacts.has(artifactId);
-};
+const isArtifactInjected = (artifactId: string): boolean => injectedArtifacts.has(artifactId);
 
 export { injectArtifact, removeArtifact, isArtifactInjected };

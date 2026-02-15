@@ -6,7 +6,7 @@ export interface TableInfo {
   count: number;
 }
 
-export function useDatabaseBrowser(extensionId: string) {
+export const useDatabaseBrowser = (extensionId: string) => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -66,13 +66,10 @@ export function useDatabaseBrowser(extensionId: string) {
     }
   }, [selectedTable, page, extensionId, fetchRows]);
 
-  const selectTable = useCallback(
-    (tableName: string) => {
-      setSelectedTable(tableName);
-      setPage(0);
-    },
-    [],
-  );
+  const selectTable = useCallback((tableName: string) => {
+    setSelectedTable(tableName);
+    setPage(0);
+  }, []);
 
   const refresh = useCallback(async () => {
     await fetchTables(extensionId);
@@ -120,4 +117,4 @@ export function useDatabaseBrowser(extensionId: string) {
     deleteRow,
     refresh,
   };
-}
+};

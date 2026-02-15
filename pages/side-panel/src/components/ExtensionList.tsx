@@ -11,7 +11,7 @@ interface ExtensionListProps {
 }
 
 // Fetch artifact types for an extension to show as tags
-function useExtensionTags(extensions: Extension[]) {
+const useExtensionTags = (extensions: Extension[]) => {
   const [tags, setTags] = useState<Record<string, string[]>>({});
 
   const refresh = useCallback(async () => {
@@ -37,7 +37,7 @@ function useExtensionTags(extensions: Extension[]) {
   }, [extensions, refresh]);
 
   return tags;
-}
+};
 
 const TAG_COLORS: Record<string, string> = {
   'react-component': 'text-primary/80',
@@ -54,7 +54,7 @@ const TAG_LABELS: Record<string, string> = {
 };
 
 /** Build a URL pattern (origin + /*) from a full page URL, or empty if not a valid http(s) URL. */
-function baseUrlPattern(fullUrl: string | undefined): string {
+const baseUrlPattern = (fullUrl: string | undefined): string => {
   if (!fullUrl || !fullUrl.startsWith('http')) return '';
   try {
     const u = new URL(fullUrl);
@@ -62,9 +62,9 @@ function baseUrlPattern(fullUrl: string | undefined): string {
   } catch {
     return '';
   }
-}
+};
 
-export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggle, onDelete }: ExtensionListProps) {
+export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggle, onDelete }: ExtensionListProps) => {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
@@ -136,6 +136,7 @@ export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggl
             onChange={e => setNewName(e.target.value)}
             placeholder="Extension name..."
             className="minimal-input"
+            // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
           />
           <input
@@ -180,7 +181,12 @@ export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggl
           <div
             key={ext.id}
             className="border-terminal-border group cursor-pointer border p-4 transition-colors hover:border-slate-700"
-            onClick={() => onSelect(ext)}>
+            role="button"
+            tabIndex={0}
+            onClick={() => onSelect(ext)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') onSelect(ext);
+            }}>
             <div className="flex items-start justify-between">
               <div className="min-w-0 flex-1">
                 <h3 className="truncate text-[13px] font-semibold tracking-tight text-white">{ext.name}</h3>
@@ -189,9 +195,12 @@ export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggl
                 </code>
               </div>
               {/* Toggle */}
+              {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
               <label
                 className="relative mt-1 inline-flex cursor-pointer items-center"
-                onClick={e => e.stopPropagation()}>
+                aria-label={`Toggle ${ext.name}`}
+                onClick={e => e.stopPropagation()}
+                onKeyDown={e => e.stopPropagation()}>
                 <input
                   type="checkbox"
                   checked={ext.enabled}
@@ -215,6 +224,7 @@ export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggl
               </div>
               <div
                 className="flex gap-3 opacity-0 transition-opacity group-hover:opacity-100"
+                role="presentation"
                 onClick={e => e.stopPropagation()}>
                 <button
                   onClick={() => onSelect(ext)}
@@ -235,4 +245,4 @@ export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggl
       </div>
     </div>
   );
-}
+};

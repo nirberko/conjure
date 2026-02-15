@@ -1,4 +1,3 @@
-import { describe, it, expect } from 'vitest';
 import {
   createExtension,
   getExtension,
@@ -18,6 +17,7 @@ import {
   getSetting,
   setSetting,
 } from '../index.js';
+import { describe, it, expect } from 'vitest';
 
 describe('Extension CRUD', () => {
   it('creates and retrieves an extension', async () => {

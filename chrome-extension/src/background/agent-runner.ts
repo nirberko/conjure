@@ -4,9 +4,7 @@ import { buildAgentGraph, createUserMessage, DexieCheckpointSaver, createChatMod
 import type { AIProvider, TabInfo } from '@extension/shared';
 import type { ToolContext, AgentStreamEvent } from '@extension/shared/agent';
 
-export type { AgentStreamEvent } from '@extension/shared/agent';
-
-export interface AgentRunConfig {
+interface AgentRunConfig {
   extensionId: string;
   provider: AIProvider;
   apiKey: string;
@@ -17,15 +15,15 @@ export interface AgentRunConfig {
 const activeRuns = new Map<string, AbortController>();
 const checkpointer = new DexieCheckpointSaver();
 
-function sendStreamEvent(event: AgentStreamEvent) {
+const sendStreamEvent = (event: AgentStreamEvent) => {
   console.log('[Conjure Agent] Stream event:', event.type, event.data);
   chrome.runtime.sendMessage({ type: 'AGENT_STREAM_EVENT', payload: event }).catch(err => {
     console.warn('[Conjure Agent] Failed to send stream event:', err.message);
   });
-}
+};
 
-function sendMessageToTab(tabId: number, message: unknown): Promise<unknown> {
-  return new Promise((resolve, reject) => {
+const sendMessageToTab = (tabId: number, message: unknown): Promise<unknown> =>
+  new Promise((resolve, reject) => {
     chrome.tabs.sendMessage(tabId, message, response => {
       if (chrome.runtime.lastError) {
         reject(new Error(chrome.runtime.lastError.message));
@@ -34,77 +32,74 @@ function sendMessageToTab(tabId: number, message: unknown): Promise<unknown> {
       }
     });
   });
-}
 
-function createToolContext(config: AgentRunConfig): ToolContext {
-  return {
-    extensionId: config.extensionId,
-    tabId: config.tabInfo?.tabId,
-    sendToContentScript: async (tabId: number, message: unknown) => {
-      try {
-        return await sendMessageToTab(tabId, message);
-      } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : String(error);
-        if (!errorMsg.includes('Receiving end does not exist')) {
-          throw error;
-        }
-
-        // Content script not loaded — inject it programmatically and retry
-        try {
-          await chrome.scripting.executeScript({
-            target: { tabId },
-            files: ['content/all.iife.js'],
-          });
-        } catch {
-          throw error; // Injection failed (restricted page) — surface original error
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 200));
-        return await sendMessageToTab(tabId, message);
+const createToolContext = (config: AgentRunConfig): ToolContext => ({
+  extensionId: config.extensionId,
+  tabId: config.tabInfo?.tabId,
+  sendToContentScript: async (tabId: number, message: unknown) => {
+    try {
+      return await sendMessageToTab(tabId, message);
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (!errorMsg.includes('Receiving end does not exist')) {
+        throw error;
       }
-    },
-    waitForMessage: (messageType: string, timeoutMs = 30000) =>
-      new Promise((resolve, reject) => {
-        let settled = false;
 
-        const listener = (message: { type: string; payload?: unknown }) => {
-          if (message.type === messageType) {
-            if (settled) return;
-            settled = true;
-            chrome.runtime.onMessage.removeListener(listener);
-            clearTimeout(timer);
-            resolve(message.payload);
-          }
-        };
+      // Content script not loaded — inject it programmatically and retry
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId },
+          files: ['content/all.iife.js'],
+        });
+      } catch {
+        throw error; // Injection failed (restricted page) — surface original error
+      }
 
-        const timer = setTimeout(() => {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      return await sendMessageToTab(tabId, message);
+    }
+  },
+  waitForMessage: (messageType: string, timeoutMs = 30000) =>
+    new Promise((resolve, reject) => {
+      let settled = false;
+
+      const listener = (message: { type: string; payload?: unknown }) => {
+        if (message.type === messageType) {
           if (settled) return;
           settled = true;
           chrome.runtime.onMessage.removeListener(listener);
-          reject(new Error(`Timed out waiting for message: ${messageType}`));
-        }, timeoutMs);
+          clearTimeout(timer);
+          resolve(message.payload);
+        }
+      };
 
-        chrome.runtime.onMessage.addListener(listener);
-      }),
-    sendToServiceWorker: async (message: unknown) => {
-      // We're already in the service worker, so handle messages directly
-      const msg = message as { type: string; payload?: Record<string, unknown> };
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        chrome.runtime.onMessage.removeListener(listener);
+        reject(new Error(`Timed out waiting for message: ${messageType}`));
+      }, timeoutMs);
 
-      switch (msg.type) {
-        case 'START_BACKGROUND_WORKER':
-          return startBackgroundWorker(msg.payload?.artifactId as string);
-        case 'STOP_BACKGROUND_WORKER':
-          return stopBackgroundWorker(msg.payload?.extensionId as string);
-        case 'RELOAD_BACKGROUND_WORKER':
-          return reloadBackgroundWorker(msg.payload?.artifactId as string);
-        default:
-          return { error: `Unknown service worker message type: ${msg.type}` };
-      }
-    },
-  };
-}
+      chrome.runtime.onMessage.addListener(listener);
+    }),
+  sendToServiceWorker: async (message: unknown) => {
+    // We're already in the service worker, so handle messages directly
+    const msg = message as { type: string; payload?: Record<string, unknown> };
 
-export async function runAgent(config: AgentRunConfig, userMessage: string): Promise<void> {
+    switch (msg.type) {
+      case 'START_BACKGROUND_WORKER':
+        return startBackgroundWorker(msg.payload?.artifactId as string);
+      case 'STOP_BACKGROUND_WORKER':
+        return stopBackgroundWorker(msg.payload?.extensionId as string);
+      case 'RELOAD_BACKGROUND_WORKER':
+        return reloadBackgroundWorker(msg.payload?.artifactId as string);
+      default:
+        return { error: `Unknown service worker message type: ${msg.type}` };
+    }
+  },
+});
+
+const runAgent = async (config: AgentRunConfig, userMessage: string): Promise<void> => {
   console.log('[Conjure Agent] runAgent called:', {
     provider: config.provider,
     model: config.model,
@@ -245,13 +240,11 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
   } finally {
     activeRuns.delete(config.extensionId);
   }
-}
+};
 
-export function getAgentStatus(extensionId: string): boolean {
-  return activeRuns.has(extensionId);
-}
+const getAgentStatus = (extensionId: string): boolean => activeRuns.has(extensionId);
 
-export function stopAgent(extensionId: string): boolean {
+const stopAgent = (extensionId: string): boolean => {
   const controller = activeRuns.get(extensionId);
   if (controller) {
     controller.abort();
@@ -259,4 +252,7 @@ export function stopAgent(extensionId: string): boolean {
     return true;
   }
   return false;
-}
+};
+
+export { runAgent, getAgentStatus, stopAgent };
+export type { AgentStreamEvent, AgentRunConfig };

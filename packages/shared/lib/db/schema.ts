@@ -34,7 +34,7 @@ export type ConjureDB = Dexie & {
   extensionSchemas: Table<ExtensionSchema, string>;
 };
 
-export function createDB(): ConjureDB {
+export const createDB = (): ConjureDB => {
   const db = new Dexie('conjure') as ConjureDB;
 
   db.version(1).stores({
@@ -85,4 +85,4 @@ export function createDB(): ConjureDB {
   });
 
   return db;
-}
+};

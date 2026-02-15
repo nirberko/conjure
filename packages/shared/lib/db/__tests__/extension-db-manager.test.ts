@@ -1,5 +1,5 @@
-import { describe, it, expect, afterEach } from 'vitest';
 import { extensionDBManager } from '../extension-db-manager.js';
+import { describe, it, expect, afterEach } from 'vitest';
 
 // Clean up extension databases after each test
 afterEach(async () => {
@@ -51,9 +51,7 @@ describe('ExtensionDBManager', () => {
     });
 
     it('throws for extension with no schema', async () => {
-      await expect(
-        extensionDBManager.removeTables('nonexistent', ['table']),
-      ).rejects.toThrow('No schema found');
+      await expect(extensionDBManager.removeTables('nonexistent', ['table'])).rejects.toThrow('No schema found');
     });
   });
 

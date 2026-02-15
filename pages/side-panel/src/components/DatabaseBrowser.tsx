@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
-import { useDatabaseBrowser } from '../hooks/useDatabaseBrowser';
-import { DatabaseTableView } from './DatabaseTableView';
 import { DatabaseRowEditor } from './DatabaseRowEditor';
+import { DatabaseTableView } from './DatabaseTableView';
+import { useDatabaseBrowser } from '../hooks/useDatabaseBrowser';
+import { useState, useCallback } from 'react';
 
 interface DatabaseBrowserProps {
   extensionId: string;
 }
 
-export function DatabaseBrowser({ extensionId }: DatabaseBrowserProps) {
+export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
   const {
     tables,
     selectedTable,
@@ -64,10 +64,13 @@ export function DatabaseBrowser({ extensionId }: DatabaseBrowserProps) {
         </div>
       ) : (
         <div>
-          <label className="mb-1 block font-mono text-[9px] uppercase tracking-widest text-slate-600">
+          <label
+            htmlFor="db-table-select"
+            className="mb-1 block font-mono text-[9px] uppercase tracking-widest text-slate-600">
             Table
           </label>
           <select
+            id="db-table-select"
             value={selectedTable}
             onChange={e => selectTable(e.target.value)}
             className="bg-background-dark border-terminal-border w-full border px-3 py-2 font-mono text-[11px] text-slate-300">
@@ -103,20 +106,14 @@ export function DatabaseBrowser({ extensionId }: DatabaseBrowserProps) {
       )}
 
       {/* Rows */}
-      {selectedTable && (
-        loadingRows ? (
+      {selectedTable &&
+        (loadingRows ? (
           <div className="py-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
             Loading rows...
           </div>
         ) : (
-          <DatabaseTableView
-            rows={rows}
-            primaryKey={primaryKey}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        )
-      )}
+          <DatabaseTableView rows={rows} primaryKey={primaryKey} onEdit={handleEdit} onDelete={handleDelete} />
+        ))}
 
       {/* Pagination */}
       {selectedTable && totalPages > 1 && (
@@ -150,4 +147,4 @@ export function DatabaseBrowser({ extensionId }: DatabaseBrowserProps) {
       )}
     </div>
   );
-}
+};

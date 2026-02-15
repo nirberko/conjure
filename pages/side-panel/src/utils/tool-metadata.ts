@@ -20,13 +20,11 @@ const toolMetadataMap: Record<string, ToolMetadata> = {
   request_user_input: { label: 'Request Input', icon: 'input' },
 };
 
-function snakeCaseToTitleCase(name: string): string {
-  return name
+const snakeCaseToTitleCase = (name: string): string =>
+  name
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
-}
 
-export function getToolMetadata(toolName: string): ToolMetadata {
-  return toolMetadataMap[toolName] ?? { label: snakeCaseToTitleCase(toolName), icon: 'terminal' };
-}
+export const getToolMetadata = (toolName: string): ToolMetadata =>
+  toolMetadataMap[toolName] ?? { label: snakeCaseToTitleCase(toolName), icon: 'terminal' };

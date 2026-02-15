@@ -170,7 +170,7 @@ class ExtensionDBManager {
       case 'clear':
         return table.clear();
       default:
-        throw new Error(`Unknown operation type: ${(operation as any).type}`);
+        throw new Error(`Unknown operation type: ${(operation as ExtDBOperation).type}`);
     }
   }
 

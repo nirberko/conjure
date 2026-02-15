@@ -8,19 +8,11 @@ interface WorkerInstance {
 
 const workers = new Map<string, WorkerInstance>();
 
-const getWorker = (extensionId: string): WorkerInstance | undefined => {
-  return workers.get(extensionId);
-};
+const getWorker = (extensionId: string): WorkerInstance | undefined => workers.get(extensionId);
 
-const getAllWorkers = (): Map<string, WorkerInstance> => {
-  return workers;
-};
+const getAllWorkers = (): Map<string, WorkerInstance> => workers;
 
-const createWorkerInstance = (
-  extensionId: string,
-  artifactId: string,
-  iframe: HTMLIFrameElement,
-): WorkerInstance => {
+const createWorkerInstance = (extensionId: string, artifactId: string, iframe: HTMLIFrameElement): WorkerInstance => {
   const instance: WorkerInstance = {
     extensionId,
     artifactId,

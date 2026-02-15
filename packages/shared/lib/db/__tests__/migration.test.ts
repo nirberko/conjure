@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { migrateV1ToV2 } from '../migration.js';
 import { db, getSetting, getAllExtensions, getArtifactsByExtension } from '../index.js';
+import { migrateV1ToV2 } from '../migration.js';
+import { describe, it, expect } from 'vitest';
 
 describe('migrateV1ToV2', () => {
   it('skips when already complete', async () => {

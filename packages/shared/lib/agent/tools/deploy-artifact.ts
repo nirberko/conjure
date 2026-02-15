@@ -3,8 +3,8 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
-export function createDeployArtifactTool(ctx: ToolContext) {
-  return tool(
+export const createDeployArtifactTool = (ctx: ToolContext) =>
+  tool(
     async ({ artifactId }) => {
       const artifact = await getArtifact(artifactId);
       if (!artifact) {
@@ -56,4 +56,3 @@ export function createDeployArtifactTool(ctx: ToolContext) {
       }),
     },
   );
-}

@@ -1,8 +1,8 @@
+import { CodeBlock } from './CodeBlock';
 import { useState } from 'react';
 import type { Artifact } from '@extension/shared';
-import { CodeBlock } from './CodeBlock';
 
-export interface WorkerStatus {
+interface WorkerStatus {
   status: string;
   artifactId: string;
   error?: string;
@@ -35,13 +35,13 @@ const TYPE_BADGES: Record<string, { label: string; badgeClass: string }> = {
   },
 };
 
-export function ArtifactCard({
+export const ArtifactCard = ({
   artifact,
   workerStatus,
   onStartWorker,
   onStopWorker,
   onViewWorker,
-}: ArtifactCardProps) {
+}: ArtifactCardProps) => {
   const [showCode, setShowCode] = useState(false);
   const typeInfo = TYPE_BADGES[artifact.type] ?? {
     label: artifact.type.toUpperCase(),
@@ -59,7 +59,14 @@ export function ArtifactCard({
       : 'hover:bg-white/[0.02] border-y border-transparent hover:border-terminal-border';
 
   return (
-    <div className={`group cursor-pointer px-4 py-3 transition-colors ${cardBg}`} onClick={() => setShowCode(s => !s)}>
+    <div
+      className={`group cursor-pointer px-4 py-3 transition-colors ${cardBg}`}
+      role="button"
+      tabIndex={0}
+      onClick={() => setShowCode(s => !s)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') setShowCode(s => !s);
+      }}>
       {isTerminated ? (
         /* Error / Terminated state */
         <div className="flex flex-col gap-2">
@@ -86,12 +93,18 @@ export function ArtifactCard({
           {/* Actions */}
           <div className="flex items-center gap-4">
             <button
-              onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
+              onClick={e => {
+                e.stopPropagation();
+                onStartWorker?.(artifact);
+              }}
               className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
               Restart
             </button>
             <button
-              onClick={e => { e.stopPropagation(); setShowCode(!showCode); }}
+              onClick={e => {
+                e.stopPropagation();
+                setShowCode(!showCode);
+              }}
               className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-slate-300 hover:underline">
               {showCode ? 'Hide' : 'Logs'}
             </button>
@@ -120,38 +133,48 @@ export function ArtifactCard({
 
             {/* XPath target */}
             {artifact.elementXPath && (
-              <p className="font-mono text-[10px] text-slate-500">
-                XPath: {artifact.elementXPath}
-              </p>
+              <p className="font-mono text-[10px] text-slate-500">XPath: {artifact.elementXPath}</p>
             )}
 
             {/* Actions (workers only) */}
             {isWorker && (
-            <div className="mt-1 flex items-center justify-between">
+              <div className="mt-1 flex items-center justify-between">
                 <>
                   <div className="flex items-center gap-3">
                     {isRunning ? (
                       <>
                         <button
-                          onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            onStartWorker?.(artifact);
+                          }}
                           className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
                           Reload
                         </button>
                         <button
-                          onClick={e => { e.stopPropagation(); onStopWorker?.(artifact.extensionId); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            onStopWorker?.(artifact.extensionId);
+                          }}
                           className="font-mono text-[10px] uppercase tracking-tighter text-red-500/70 underline-offset-4 transition-all hover:text-red-400 hover:underline">
                           Stop
                         </button>
                       </>
                     ) : (
                       <button
-                        onClick={e => { e.stopPropagation(); onStartWorker?.(artifact); }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          onStartWorker?.(artifact);
+                        }}
                         className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
                         Start
                       </button>
                     )}
                     <button
-                      onClick={e => { e.stopPropagation(); onViewWorker?.(artifact); }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        onViewWorker?.(artifact);
+                      }}
                       className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
                       View
                     </button>
@@ -162,7 +185,7 @@ export function ArtifactCard({
                     </span>
                   )}
                 </>
-            </div>
+              </div>
             )}
           </div>
         </div>
@@ -179,4 +202,6 @@ export function ArtifactCard({
       )}
     </div>
   );
-}
+};
+
+export type { WorkerStatus };

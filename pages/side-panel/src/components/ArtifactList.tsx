@@ -8,7 +8,7 @@ interface ArtifactListProps {
   extensionId: string;
 }
 
-export function ArtifactList({ extensionId }: ArtifactListProps) {
+export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [workerStatuses, setWorkerStatuses] = useState<Record<string, WorkerStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -54,10 +54,10 @@ export function ArtifactList({ extensionId }: ArtifactListProps) {
         artifact={activeWorkerArtifact}
         workerStatus={workerStatuses[activeWorkerArtifact.extensionId]}
         onBack={() => setActiveWorkerArtifact(null)}
-        onStartWorker={async (art) => {
+        onStartWorker={async art => {
           await handleStartWorker(art);
         }}
-        onStopWorker={async (extId) => {
+        onStopWorker={async extId => {
           await handleStopWorker(extId);
         }}
       />
@@ -112,4 +112,4 @@ export function ArtifactList({ extensionId }: ArtifactListProps) {
       </footer>
     </div>
   );
-}
+};

@@ -1,6 +1,6 @@
 let creating: Promise<void> | null = null;
 
-export async function ensureOffscreenDocument(): Promise<void> {
+export const ensureOffscreenDocument = async (): Promise<void> => {
   const existingContexts = await chrome.runtime.getContexts({
     contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
     documentUrls: [chrome.runtime.getURL('offscreen/index.html')],
@@ -23,9 +23,9 @@ export async function ensureOffscreenDocument(): Promise<void> {
 
   await creating;
   creating = null;
-}
+};
 
-export async function closeOffscreenIfEmpty(): Promise<void> {
+export const closeOffscreenIfEmpty = async (): Promise<void> => {
   try {
     const existingContexts = await chrome.runtime.getContexts({
       contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
@@ -38,4 +38,4 @@ export async function closeOffscreenIfEmpty(): Promise<void> {
   } catch {
     // May already be closed
   }
-}
+};

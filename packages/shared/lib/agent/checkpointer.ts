@@ -129,7 +129,7 @@ export class DexieCheckpointSaver extends BaseCheckpointSaver {
     config: RunnableConfig,
     checkpoint: Checkpoint,
     metadata: CheckpointMetadata,
-    _newVersions: ChannelVersions,
+    _newVersions: ChannelVersions, // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<RunnableConfig> {
     const { thread_id, checkpoint_ns = '' } = config.configurable ?? {};
     if (!thread_id) throw new Error('thread_id is required');

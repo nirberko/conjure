@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Extension, Artifact } from '@extension/shared';
 
-export function useExtensions() {
+export const useExtensions = () => {
   const [extensions, setExtensions] = useState<Extension[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,4 +71,4 @@ export function useExtensions() {
     getArtifacts,
     refresh,
   };
-}
+};

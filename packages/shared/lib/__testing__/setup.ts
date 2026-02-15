@@ -1,9 +1,9 @@
 import 'fake-indexeddb/auto';
-import { beforeEach, afterEach } from 'vitest';
 import { createChromeMock } from './chrome-mock.js';
+import { beforeEach, afterEach } from 'vitest';
 
 beforeEach(() => {
-  (globalThis as any).chrome = createChromeMock();
+  (globalThis as Record<string, unknown>).chrome = createChromeMock();
 });
 
 afterEach(async () => {
@@ -17,5 +17,5 @@ afterEach(async () => {
   } catch {
     // DB module may not be loaded in all test contexts
   }
-  delete (globalThis as any).chrome;
+  delete (globalThis as Record<string, unknown>).chrome;
 });

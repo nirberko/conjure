@@ -2,8 +2,8 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
-export function createVerifyDeploymentTool(ctx: ToolContext) {
-  return tool(
+export const createVerifyDeploymentTool = (ctx: ToolContext) =>
+  tool(
     async ({ artifactId, expectedSelector }) => {
       if (!ctx.tabId) {
         return JSON.stringify({ success: false, error: 'No active tab' });
@@ -28,4 +28,3 @@ export function createVerifyDeploymentTool(ctx: ToolContext) {
       }),
     },
   );
-}

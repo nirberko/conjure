@@ -7,14 +7,14 @@ interface DatabaseRowEditorProps {
   onCancel: () => void;
 }
 
-function inferFieldType(value: unknown): 'string' | 'number' | 'boolean' | 'json' {
+const inferFieldType = (value: unknown): 'string' | 'number' | 'boolean' | 'json' => {
   if (typeof value === 'boolean') return 'boolean';
   if (typeof value === 'number') return 'number';
   if (typeof value === 'object' && value !== null) return 'json';
   return 'string';
-}
+};
 
-export function DatabaseRowEditor({ row, primaryKey, onSave, onCancel }: DatabaseRowEditorProps) {
+export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: DatabaseRowEditorProps) => {
   const isInsert = row === null;
   const pkFields = Array.isArray(primaryKey) ? primaryKey : [primaryKey];
 
@@ -102,9 +102,17 @@ export function DatabaseRowEditor({ row, primaryKey, onSave, onCancel }: Databas
   }, [fields, fieldTypes, onSave]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-12" onClick={onCancel}>
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-12"
+      role="button"
+      tabIndex={0}
+      onClick={onCancel}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') onCancel();
+      }}>
       <div
         className="border-terminal-border bg-background-dark mx-4 max-h-[80vh] w-full max-w-md overflow-y-auto border p-5"
+        role="presentation"
         onClick={e => e.stopPropagation()}>
         <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-white">
           {isInsert ? 'Insert Row' : 'Edit Row'}
@@ -196,9 +204,7 @@ export function DatabaseRowEditor({ row, primaryKey, onSave, onCancel }: Databas
           </button>
         </div>
 
-        {error && (
-          <div className="mt-3 text-[10px] font-medium text-red-400">{error}</div>
-        )}
+        {error && <div className="mt-3 text-[10px] font-medium text-red-400">{error}</div>}
 
         {/* Actions */}
         <div className="mt-5 flex gap-4">
@@ -216,4 +222,4 @@ export function DatabaseRowEditor({ row, primaryKey, onSave, onCancel }: Databas
       </div>
     </div>
   );
-}
+};

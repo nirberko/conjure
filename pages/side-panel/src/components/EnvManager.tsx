@@ -4,7 +4,7 @@ interface EnvManagerProps {
   extensionId: string;
 }
 
-export function EnvManager({ extensionId }: EnvManagerProps) {
+export const EnvManager = ({ extensionId }: EnvManagerProps) => {
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -55,6 +55,7 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
 
   const handleDelete = useCallback(
     async (key: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [key]: _, ...rest } = envVars;
       await saveEnvVars(rest);
       setRevealed(prev => {
@@ -104,13 +105,11 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
   return (
     <div className="h-full space-y-4 overflow-y-auto p-4">
       <div className="flex items-center justify-between">
-        <label className="font-mono text-[9px] uppercase tracking-widest text-slate-600">
-          Environment Variables
-        </label>
+        <span className="font-mono text-[9px] uppercase tracking-widest text-slate-600">Environment Variables</span>
         {!adding && (
           <button
             onClick={() => setAdding(true)}
-            className="text-primary font-mono text-[10px] uppercase tracking-widest hover:text-white transition-colors">
+            className="text-primary font-mono text-[10px] uppercase tracking-widest transition-colors hover:text-white">
             + Add
           </button>
         )}
@@ -135,7 +134,7 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
             <button
               onClick={handleAdd}
               disabled={!newKey.trim()}
-              className="bg-primary/20 text-primary border-primary/30 border px-3 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors hover:bg-primary/30 disabled:opacity-40">
+              className="bg-primary/20 text-primary border-primary/30 hover:bg-primary/30 border px-3 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors disabled:opacity-40">
               Save
             </button>
             <button
@@ -158,12 +157,8 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
       ) : (
         <div className="space-y-1">
           {entries.map(([key, value]) => (
-            <div
-              key={key}
-              className="border-terminal-border flex items-center gap-2 border bg-black/20 px-3 py-2">
-              <span className="min-w-0 flex-shrink-0 font-mono text-[11px] font-medium text-slate-300">
-                {key}
-              </span>
+            <div key={key} className="border-terminal-border flex items-center gap-2 border bg-black/20 px-3 py-2">
+              <span className="min-w-0 flex-shrink-0 font-mono text-[11px] font-medium text-slate-300">{key}</span>
               <span className="text-slate-700">=</span>
 
               {editingKey === key ? (
@@ -171,6 +166,7 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
                   <input
                     value={editValue}
                     onChange={e => setEditValue(e.target.value)}
+                    // eslint-disable-next-line jsx-a11y/no-autofocus
                     autoFocus
                     onKeyDown={e => {
                       if (e.key === 'Enter') handleEditSave();
@@ -222,4 +218,4 @@ export function EnvManager({ extensionId }: EnvManagerProps) {
       )}
     </div>
   );
-}
+};

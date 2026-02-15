@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ensureOffscreenDocument, closeOffscreenIfEmpty } from '../offscreen-manager.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('OffscreenManager', () => {
   beforeEach(() => {
@@ -21,7 +21,9 @@ describe('OffscreenManager', () => {
     });
 
     it('skips creation when document already exists', async () => {
-      chrome.runtime.getContexts = vi.fn().mockResolvedValue([{ documentUrl: 'chrome-extension://mock-id/offscreen/index.html' }]);
+      chrome.runtime.getContexts = vi
+        .fn()
+        .mockResolvedValue([{ documentUrl: 'chrome-extension://mock-id/offscreen/index.html' }]);
 
       await ensureOffscreenDocument();
 
@@ -53,7 +55,9 @@ describe('OffscreenManager', () => {
 
   describe('closeOffscreenIfEmpty', () => {
     it('closes document when it exists', async () => {
-      chrome.runtime.getContexts = vi.fn().mockResolvedValue([{ documentUrl: 'chrome-extension://mock-id/offscreen/index.html' }]);
+      chrome.runtime.getContexts = vi
+        .fn()
+        .mockResolvedValue([{ documentUrl: 'chrome-extension://mock-id/offscreen/index.html' }]);
 
       await closeOffscreenIfEmpty();
 

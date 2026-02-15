@@ -2,8 +2,8 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
-export function createPickElementTool(ctx: ToolContext) {
-  return tool(
+export const createPickElementTool = (ctx: ToolContext) =>
+  tool(
     async () => {
       if (!ctx.tabId) {
         return JSON.stringify({ success: false, error: 'No active tab' });
@@ -50,4 +50,3 @@ export function createPickElementTool(ctx: ToolContext) {
       schema: z.object({}),
     },
   );
-}

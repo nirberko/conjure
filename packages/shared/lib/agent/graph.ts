@@ -14,22 +14,26 @@ import type { BaseMessage } from '@langchain/core/messages';
  * by tool response messages for each tool_call_id. If a previous run
  * was interrupted, the checkpoint may have dangling tool_calls.
  */
-export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
+const sanitizeMessages = (messages: BaseMessage[]): BaseMessage[] => {
   const result: BaseMessage[] = [];
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-    const toolCalls = ('tool_calls' in msg ? (msg as any).tool_calls : undefined) as Array<{ id: string }> | undefined;
+    const toolCalls = ('tool_calls' in msg ? (msg as unknown as Record<string, unknown>).tool_calls : undefined) as
+      | Array<{ id: string }>
+      | undefined;
 
     if (toolCalls && toolCalls.length > 0) {
       // Check if all tool_call_ids have matching tool responses after this message
       const requiredIds = new Set(toolCalls.map(tc => tc.id));
       for (let j = i + 1; j < messages.length; j++) {
-        const next = messages[j] as any;
+        const next = messages[j] as unknown as Record<string, unknown>;
         // Check for tool message via _getType() or tool_call_id property
-        const toolCallId = next.tool_call_id ?? next.lc_kwargs?.tool_call_id ?? next.kwargs?.tool_call_id;
+        const lc_kwargs = next.lc_kwargs as Record<string, unknown> | undefined;
+        const kwargs = next.kwargs as Record<string, unknown> | undefined;
+        const toolCallId = next.tool_call_id ?? lc_kwargs?.tool_call_id ?? kwargs?.tool_call_id;
         if (toolCallId) {
-          requiredIds.delete(toolCallId);
+          requiredIds.delete(toolCallId as string);
         } else {
           break; // Stop looking once we hit a non-tool message
         }
@@ -43,16 +47,21 @@ export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
     }
 
     // Also skip orphaned tool messages whose assistant message was removed
-    const isToolMsg = (msg as any).tool_call_id || (msg as any).lc_kwargs?.tool_call_id;
+    const msgRecord = msg as unknown as Record<string, unknown>;
+    const msgLcKwargs = msgRecord.lc_kwargs as Record<string, unknown> | undefined;
+    const isToolMsg = msgRecord.tool_call_id || msgLcKwargs?.tool_call_id;
     if (isToolMsg) {
       // Check if the preceding message in result has matching tool_calls
       const prev = result[result.length - 1];
-      const prevToolCalls = prev && 'tool_calls' in prev ? (prev as any).tool_calls : undefined;
+      const prevToolCalls =
+        prev && 'tool_calls' in prev ? (prev as unknown as Record<string, unknown>).tool_calls : undefined;
       if (!prevToolCalls) {
         // Check if ANY previous result message has the tool_calls
-        const tcId = (msg as any).tool_call_id ?? (msg as any).lc_kwargs?.tool_call_id;
+        const tcId = msgRecord.tool_call_id ?? msgLcKwargs?.tool_call_id;
         const hasParent = result.some(m => {
-          const tcs = ('tool_calls' in m ? (m as any).tool_calls : []) as Array<{ id: string }>;
+          const tcs = ('tool_calls' in m ? (m as unknown as Record<string, unknown>).tool_calls : []) as Array<{
+            id: string;
+          }>;
           return tcs?.some(tc => tc.id === tcId);
         });
         if (!hasParent) {
@@ -66,14 +75,14 @@ export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
   }
 
   return result;
-}
+};
 
-function createGraph(model: BaseChatModel, toolContext: ToolContext) {
+const createGraph = (model: BaseChatModel, toolContext: ToolContext) => {
   const tools = createAgentTools(toolContext);
   const modelWithTools = model.bindTools!(tools);
 
   // --- Node: Router / Orchestrator ---
-  async function orchestrator(state: typeof ExtensionAgentState.State) {
+  const orchestrator = async (state: typeof ExtensionAgentState.State) => {
     console.log('[Conjure Graph] Orchestrator node entered, iteration:', state.iterationCount);
     const artifacts = await getArtifactsByExtension(state.extensionId);
     const tabInfo = state.activeTabInfo;
@@ -106,10 +115,10 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
       artifacts,
       iterationCount: state.iterationCount + 1,
     };
-  }
+  };
 
   // --- Node: Tool Executor ---
-  async function toolExecutor(state: typeof ExtensionAgentState.State) {
+  const toolExecutor = async (state: typeof ExtensionAgentState.State) => {
     console.log('[Conjure Graph] Tool executor node entered');
     const lastMessage = state.messages[state.messages.length - 1];
     const toolCalls = ('tool_calls' in lastMessage ? lastMessage.tool_calls : []) as Array<{
@@ -145,7 +154,9 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
       }
 
       try {
-        const result = await (toolInstance as any).invoke(toolCall.args);
+        const result = await (
+          toolInstance as unknown as { invoke: (args: Record<string, unknown>) => Promise<unknown> }
+        ).invoke(toolCall.args);
         console.log('[Conjure Graph] Tool result for', toolCall.name, ':', JSON.stringify(result).slice(0, 300));
         results.push({
           role: 'tool' as const,
@@ -168,10 +179,10 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
     const artifacts = await getArtifactsByExtension(toolContext.extensionId);
 
     return { messages: results, artifacts };
-  }
+  };
 
   // --- Conditional Edge: Should Continue? ---
-  function shouldContinue(state: typeof ExtensionAgentState.State): 'tool_executor' | typeof END {
+  const shouldContinue = (state: typeof ExtensionAgentState.State): 'tool_executor' | typeof END => {
     console.log('[Conjure Graph] shouldContinue check, iteration:', state.iterationCount);
     const lastMessage = state.messages[state.messages.length - 1];
     const toolCalls = ('tool_calls' in lastMessage ? lastMessage.tool_calls : []) as unknown[];
@@ -181,7 +192,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
     }
 
     return END;
-  }
+  };
 
   // --- Build Graph ---
   const graph = new StateGraph(ExtensionAgentState)
@@ -192,13 +203,13 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
     .addEdge('tool_executor', 'orchestrator');
 
   return graph;
-}
+};
 
-export function buildAgentGraph(model: BaseChatModel, toolContext: ToolContext) {
+const buildAgentGraph = (model: BaseChatModel, toolContext: ToolContext) => {
   const graph = createGraph(model, toolContext);
   return graph;
-}
+};
 
-export function createUserMessage(content: string) {
-  return new HumanMessage(content);
-}
+const createUserMessage = (content: string) => new HumanMessage(content);
+
+export { sanitizeMessages, buildAgentGraph, createUserMessage };

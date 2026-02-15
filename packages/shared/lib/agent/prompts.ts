@@ -465,7 +465,7 @@ ALWAYS call the \`think\` tool as your FIRST action before using any other tool.
 8. NEVER ask users to paste secrets into chat. Always use \`request_user_input\` with \`envKey\` for sensitive values.
 </critical_rules>`;
 
-export function getAgentSystemPrompt(pageUrl?: string, pageTitle?: string): string {
+export const getAgentSystemPrompt = (pageUrl?: string, pageTitle?: string): string => {
   let prompt = AGENT_SYSTEM_PROMPT;
 
   if (pageUrl || pageTitle) {
@@ -475,4 +475,4 @@ export function getAgentSystemPrompt(pageUrl?: string, pageTitle?: string): stri
   }
 
   return prompt;
-}
+};

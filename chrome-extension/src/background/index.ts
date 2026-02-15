@@ -27,7 +27,8 @@ import {
   db,
 } from '@extension/shared';
 import { transform } from 'sucrase';
-import type { Extension, AIProvider, ExtDBOperation, ExtensionSchema } from '@extension/shared';
+import type { Extension, AIProvider, ExtDBOperation } from '@extension/shared';
+import type { Table } from 'dexie';
 
 console.log('[Conjure] Background service worker loaded');
 
@@ -149,15 +150,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             target: { tabId },
             world: 'MAIN',
             func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
-              const _WF = (window as any).__CONJURE__;
+              const _WF = (window as unknown as Record<string, unknown>).__CONJURE__ as
+                | Record<string, unknown>
+                | undefined;
               if (!_WF) {
                 console.error('[Conjure] React runtime not loaded');
                 return;
               }
 
               // Helper: build context code string for embedding in script element
-              function buildContextCode(): string {
-                return [
+              const buildContextCode = (): string =>
+                [
                   'var _WF = window.__CONJURE__;',
                   'var React = _WF.React;',
                   'var ReactDOM = _WF.ReactDOM;',
@@ -218,7 +221,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     JSON.stringify(pUrl) +
                     ', sendMessage: sendMessage, onWorkerMessage: onWorkerMessage, db: db, env: env };',
                 ].join('\n');
-              }
 
               // Primary: try new Function (works on most sites)
               try {
@@ -227,15 +229,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 let _nextReqId = 0;
 
-                function extDbCall(action: string, payload: Record<string, unknown>): Promise<unknown> {
-                  return new Promise((resolve, reject) => {
+                const extDbCall = (action: string, payload: Record<string, unknown>): Promise<unknown> =>
+                  new Promise((resolve, reject) => {
                     const reqId = 'db' + ++_nextReqId + '_' + Date.now();
-                    function handler(e: Event) {
+                    const handler = (e: Event) => {
                       window.removeEventListener('conjure-ext-db-' + reqId, handler);
                       const d = (e as CustomEvent).detail;
                       if (d.error) reject(new Error(d.error));
                       else resolve(d.result);
-                    }
+                    };
                     window.addEventListener('conjure-ext-db-' + reqId, handler);
                     window.dispatchEvent(
                       new CustomEvent('conjure-ext-db', {
@@ -243,25 +245,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                       }),
                     );
                   });
-                }
 
-                function getData(): Promise<Record<string, unknown>> {
-                  return extDbCall('storageGet', { key: cId + ':' + pUrl }) as Promise<Record<string, unknown>>;
-                }
+                const getData = (): Promise<Record<string, unknown>> =>
+                  extDbCall('storageGet', { key: cId + ':' + pUrl }) as Promise<Record<string, unknown>>;
 
-                function setData(data: Record<string, unknown>): Promise<void> {
-                  return extDbCall('storageSet', { key: cId + ':' + pUrl, data }) as Promise<void>;
-                }
+                const setData = (data: Record<string, unknown>): Promise<void> =>
+                  extDbCall('storageSet', { key: cId + ':' + pUrl, data }) as Promise<void>;
 
-                function sendMessage(data: unknown): void {
+                const sendMessage = (data: unknown): void => {
                   window.dispatchEvent(
                     new CustomEvent('conjure-send-worker-message', {
                       detail: { extensionId: eId, data },
                     }),
                   );
-                }
+                };
 
-                function onWorkerMessage(callback: (data: unknown) => void): () => void {
+                const onWorkerMessage = (callback: (data: unknown) => void): (() => void) => {
                   const handler = (e: Event) => {
                     const detail = (e as CustomEvent).detail;
                     if (detail?.extensionId !== eId) return;
@@ -269,7 +268,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   };
                   window.addEventListener('conjure-worker-message', handler);
                   return () => window.removeEventListener('conjure-worker-message', handler);
-                }
+                };
 
                 const db = {
                   createTables: (tables: Record<string, string>) => extDbCall('createTables', { tables }),
@@ -302,7 +301,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     return envData[key] ?? null;
                   },
                   async getAll(): Promise<Record<string, string>> {
-                    return (((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>);
+                    return ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
                   },
                 };
 
@@ -320,14 +319,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   root.render(React.createElement(ComponentResult, { context }));
                 }
                 return;
-              } catch (primaryErr: any) {
+              } catch (primaryErr: unknown) {
                 // If not a CSP/eval error, show the error directly
                 if (!(primaryErr instanceof EvalError) && !String(primaryErr).includes('Content Security Policy')) {
                   const mountEl = document.getElementById(mId);
                   if (mountEl) {
                     mountEl.innerHTML =
                       '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component render error \u2014 ' +
-                      (primaryErr.message || String(primaryErr)).replace(/</g, '&lt;') +
+                      (primaryErr instanceof Error ? primaryErr.message : String(primaryErr)).replace(/</g, '&lt;') +
                       '</div>';
                   }
                   console.error('[Conjure] Component render error:', primaryErr);
@@ -371,7 +370,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 script.textContent = scriptContent;
                 document.documentElement.appendChild(script);
                 script.remove();
-              } catch (fallbackErr: any) {
+              } catch (fallbackErr: unknown) {
                 console.error('[Conjure] Script element fallback also failed:', fallbackErr);
                 const mountEl = document.getElementById(mId);
                 if (mountEl) {
@@ -591,7 +590,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return { tables: [] };
         }
         const tables = await Promise.all(
-          targetDb.tables.map(async (table: import('dexie').Table) => ({
+          targetDb.tables.map(async (table: Table) => ({
             name: table.name,
             primaryKey: table.schema.primKey.keyPath,
             count: await table.count(),
@@ -601,7 +600,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       case 'DB_BROWSE_GET_ROWS': {
-        const { dbId, tableName, page = 0, pageSize = 20 } = message.payload as {
+        const {
+          dbId,
+          tableName,
+          page = 0,
+          pageSize = 20,
+        } = message.payload as {
           dbId?: string;
           tableName: string;
           page?: number;
@@ -635,7 +639,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           key: unknown;
         };
         const targetDb = dbId ? await extensionDBManager.getDB(dbId) : db;
-        await targetDb.table(tableName).delete(key as any);
+        await targetDb.table(tableName).delete(key as string | number);
         return { success: true };
       }
 

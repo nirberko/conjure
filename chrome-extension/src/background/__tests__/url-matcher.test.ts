@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { matchUrlPattern } from '../url-matcher.js';
+import { describe, it, expect } from 'vitest';
 
 describe('matchUrlPattern', () => {
   it('matches exact URLs', () => {

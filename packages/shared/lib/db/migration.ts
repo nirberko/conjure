@@ -4,7 +4,7 @@ import type { Extension, Artifact } from '../types/index.js';
 
 const MIGRATION_KEY = 'v2_migration_complete';
 
-export async function migrateV1ToV2(): Promise<void> {
+export const migrateV1ToV2 = async (): Promise<void> => {
   // Check if migration has already been performed
   const migrated = await db.settings.get(MIGRATION_KEY);
   if (migrated?.value) return;
@@ -49,4 +49,4 @@ export async function migrateV1ToV2(): Promise<void> {
 
   await db.settings.put({ key: MIGRATION_KEY, value: true });
   console.log('[Conjure] Migration complete');
-}
+};

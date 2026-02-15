@@ -1,12 +1,12 @@
+import { CodeBlock } from './CodeBlock';
 import { useState } from 'react';
 import type { ThinkingData } from '../hooks/useAgentChat';
-import { CodeBlock } from './CodeBlock';
 
 interface ThinkingBlockProps {
   thinking: ThinkingData;
 }
 
-export function ThinkingBlock({ thinking }: ThinkingBlockProps) {
+export const ThinkingBlock = ({ thinking }: ThinkingBlockProps) => {
   const [expanded, setExpanded] = useState(false);
 
   const seconds = Math.round(thinking.durationMs / 1000);
@@ -28,4 +28,4 @@ export function ThinkingBlock({ thinking }: ThinkingBlockProps) {
       {expanded && <CodeBlock code={thinking.content} language="text" />}
     </div>
   );
-}
+};

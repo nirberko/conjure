@@ -3,8 +3,8 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
-export function createGenerateCssTool(ctx: ToolContext) {
-  return tool(
+export const createGenerateCssTool = (ctx: ToolContext) =>
+  tool(
     async ({ name, description, cssRules }) => {
       const artifact = await createArtifact({
         extensionId: ctx.extensionId,
@@ -29,4 +29,3 @@ export function createGenerateCssTool(ctx: ToolContext) {
       }),
     },
   );
-}

@@ -25,7 +25,7 @@ export default config(
   },
   // Custom config
   {
-    ignores: ['**/build/**', '**/dist/**', '**/node_modules/**', 'chrome-extension/manifest.js'],
+    ignores: ['**/build/**', '**/dist/**', '**/node_modules/**', 'chrome-extension/manifest.js', '**/vitest.config.ts'],
   },
   {
     files: ['**/*.{ts,tsx}'],

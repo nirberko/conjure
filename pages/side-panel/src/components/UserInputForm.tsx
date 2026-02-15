@@ -9,7 +9,7 @@ interface UserInputFormProps {
   onCancel: () => void;
 }
 
-export function UserInputForm({ fields, title, submitLabel = 'Submit', onSubmit, onCancel }: UserInputFormProps) {
+export const UserInputForm = ({ fields, title, submitLabel = 'Submit', onSubmit, onCancel }: UserInputFormProps) => {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {};
     for (const field of fields) {
@@ -60,11 +60,7 @@ export function UserInputForm({ fields, title, submitLabel = 'Submit', onSubmit,
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {title && (
-        <div className="font-mono text-xs font-medium uppercase tracking-wider text-slate-400">
-          {title}
-        </div>
-      )}
+      {title && <div className="font-mono text-xs font-medium uppercase tracking-wider text-slate-400">{title}</div>}
 
       {fields.map(field => (
         <div key={field.name} className="space-y-1.5">
@@ -82,12 +78,8 @@ export function UserInputForm({ fields, title, submitLabel = 'Submit', onSubmit,
               errors[field.name] ? 'border-red-500/60' : 'border-slate-700'
             }`}
           />
-          {field.description && (
-            <div className="text-[11px] text-slate-600">{field.description}</div>
-          )}
-          {errors[field.name] && (
-            <div className="text-[11px] text-red-400">{errors[field.name]}</div>
-          )}
+          {field.description && <div className="text-[11px] text-slate-600">{field.description}</div>}
+          {errors[field.name] && <div className="text-[11px] text-red-400">{errors[field.name]}</div>}
         </div>
       ))}
 
@@ -106,4 +98,4 @@ export function UserInputForm({ fields, title, submitLabel = 'Submit', onSubmit,
       </div>
     </form>
   );
-}
+};

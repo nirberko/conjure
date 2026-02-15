@@ -7,26 +7,25 @@ interface DatabaseTableViewProps {
   onDelete: (key: unknown) => void;
 }
 
-function getRowKey(row: Record<string, unknown>, primaryKey: string | string[]): unknown {
+const getRowKey = (row: Record<string, unknown>, primaryKey: string | string[]): unknown => {
   if (Array.isArray(primaryKey)) {
     return primaryKey.map(k => row[k]);
   }
   return row[primaryKey];
-}
+};
 
-function isTimestampField(key: string, value: unknown): boolean {
+const isTimestampField = (key: string, value: unknown): boolean => {
   if (typeof value !== 'number' || value < 1e12) return false;
   return /(?:At|timestamp|createdAt|updatedAt)$/i.test(key);
-}
+};
 
-function formatTimestamp(value: number): string {
-  return new Date(value).toLocaleString(undefined, {
+const formatTimestamp = (value: number): string =>
+  new Date(value).toLocaleString(undefined, {
     dateStyle: 'short',
     timeStyle: 'medium',
   });
-}
 
-function ValueDisplay({ fieldKey, value }: { fieldKey: string; value: unknown }) {
+const ValueDisplay = ({ fieldKey, value }: { fieldKey: string; value: unknown }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (value === null || value === undefined) {
@@ -35,8 +34,7 @@ function ValueDisplay({ fieldKey, value }: { fieldKey: string; value: unknown })
 
   if (typeof value === 'boolean') {
     return (
-      <span
-        className={`font-mono text-[10px] font-bold ${value ? 'text-emerald-400' : 'text-slate-500'}`}>
+      <span className={`font-mono text-[10px] font-bold ${value ? 'text-emerald-400' : 'text-slate-500'}`}>
         {value ? 'TRUE' : 'FALSE'}
       </span>
     );
@@ -103,9 +101,9 @@ function ValueDisplay({ fieldKey, value }: { fieldKey: string; value: unknown })
   }
 
   return <span className="text-slate-400">{String(value)}</span>;
-}
+};
 
-export function DatabaseTableView({ rows, primaryKey, onEdit, onDelete }: DatabaseTableViewProps) {
+export const DatabaseTableView = ({ rows, primaryKey, onEdit, onDelete }: DatabaseTableViewProps) => {
   const [confirmDeleteKey, setConfirmDeleteKey] = useState<string | null>(null);
 
   const handleDelete = useCallback(
@@ -159,9 +157,7 @@ export function DatabaseTableView({ rows, primaryKey, onEdit, onDelete }: Databa
               </button>
               {confirmDeleteKey === keyStr ? (
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-red-400">
-                    Confirm?
-                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-red-400">Confirm?</span>
                   <button
                     onClick={() => handleDelete(key)}
                     className="font-mono text-[9px] uppercase tracking-widest text-red-400 transition-colors hover:text-red-300">
@@ -186,4 +182,4 @@ export function DatabaseTableView({ rows, primaryKey, onEdit, onDelete }: Databa
       })}
     </div>
   );
-}
+};

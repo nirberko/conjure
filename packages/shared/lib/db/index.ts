@@ -1,18 +1,17 @@
+import { extensionDBManager } from './extension-db-manager.js';
 import { createDB } from './schema.js';
 import { v4 as uuidv4 } from 'uuid';
 import type { Extension, Artifact, AgentConversation, AgentChatMessage } from '../types/index.js';
+import type { Table } from 'dexie';
 
 const db = createDB();
-
-export { db };
-export { extensionDBManager } from './extension-db-manager.js';
 
 // --- Agent Conversation CRUD ---
 
 // Cast to AgentConversation table — same underlying Dexie table, different TS shape
-const agentConversations = db.conversations as unknown as import('dexie').Table<AgentConversation, string>;
+const agentConversations = db.conversations as unknown as Table<AgentConversation, string>;
 
-export async function createAgentConversation(extensionId: string): Promise<AgentConversation> {
+const createAgentConversation = async (extensionId: string): Promise<AgentConversation> => {
   const conversation: AgentConversation = {
     id: uuidv4(),
     extensionId,
@@ -22,13 +21,12 @@ export async function createAgentConversation(extensionId: string): Promise<Agen
   };
   await agentConversations.add(conversation);
   return conversation;
-}
+};
 
-export async function getAgentConversation(extensionId: string): Promise<AgentConversation | undefined> {
-  return agentConversations.where('extensionId').equals(extensionId).first();
-}
+const getAgentConversation = async (extensionId: string): Promise<AgentConversation | undefined> =>
+  agentConversations.where('extensionId').equals(extensionId).first();
 
-export async function addAgentMessage(extensionId: string, message: AgentChatMessage): Promise<void> {
+const addAgentMessage = async (extensionId: string, message: AgentChatMessage): Promise<void> => {
   let conversation = await getAgentConversation(extensionId);
   if (!conversation) {
     conversation = await createAgentConversation(extensionId);
@@ -38,9 +36,9 @@ export async function addAgentMessage(extensionId: string, message: AgentChatMes
     messages: conversation.messages,
     updatedAt: Date.now(),
   });
-}
+};
 
-export async function updateLastAgentMessage(extensionId: string, message: AgentChatMessage): Promise<void> {
+const updateLastAgentMessage = async (extensionId: string, message: AgentChatMessage): Promise<void> => {
   const conversation = await getAgentConversation(extensionId);
   if (!conversation || conversation.messages.length === 0) return;
   conversation.messages[conversation.messages.length - 1] = message;
@@ -48,25 +46,25 @@ export async function updateLastAgentMessage(extensionId: string, message: Agent
     messages: conversation.messages,
     updatedAt: Date.now(),
   });
-}
+};
 
-export async function clearAgentConversation(extensionId: string): Promise<void> {
+const clearAgentConversation = async (extensionId: string): Promise<void> => {
   await db.conversations.where('extensionId').equals(extensionId).delete();
-}
+};
 
 // Settings helpers
-export async function getSetting<T = unknown>(key: string): Promise<T | undefined> {
+const getSetting = async <T = unknown>(key: string): Promise<T | undefined> => {
   const entry = await db.settings.get(key);
   return entry?.value as T | undefined;
-}
+};
 
-export async function setSetting(key: string, value: unknown): Promise<void> {
+const setSetting = async (key: string, value: unknown): Promise<void> => {
   await db.settings.put({ key, value });
-}
+};
 
 // --- Extension CRUD ---
 
-export async function createExtension(data: Omit<Extension, 'id' | 'createdAt' | 'updatedAt'>): Promise<Extension> {
+const createExtension = async (data: Omit<Extension, 'id' | 'createdAt' | 'updatedAt'>): Promise<Extension> => {
   const now = Date.now();
   const extension: Extension = {
     ...data,
@@ -76,39 +74,35 @@ export async function createExtension(data: Omit<Extension, 'id' | 'createdAt' |
   };
   await db.extensions.add(extension);
   return extension;
-}
+};
 
-export async function getExtension(id: string): Promise<Extension | undefined> {
-  return db.extensions.get(id);
-}
+const getExtension = async (id: string): Promise<Extension | undefined> => db.extensions.get(id);
 
-export async function getAllExtensions(): Promise<Extension[]> {
-  return db.extensions.toArray();
-}
+const getAllExtensions = async (): Promise<Extension[]> => db.extensions.toArray();
 
-export async function getExtensionsByUrl(url: string): Promise<Extension[]> {
+const getExtensionsByUrl = async (url: string): Promise<Extension[]> => {
   const all = await db.extensions.toArray();
   return all.filter(e => e.enabled && matchUrlPattern(e.urlPattern, url));
-}
+};
 
-export async function updateExtension(id: string, data: Partial<Extension>): Promise<void> {
+const updateExtension = async (id: string, data: Partial<Extension>): Promise<void> => {
   await db.extensions.update(id, { ...data, updatedAt: Date.now() });
-}
+};
 
-export async function deleteExtension(id: string): Promise<void> {
+const deleteExtension = async (id: string): Promise<void> => {
   await db.extensions.delete(id);
   // Delete all artifacts belonging to this extension
   await db.artifacts.where('extensionId').equals(id).delete();
   // Clean up agent checkpoints
   await db.agentCheckpoints.where('thread_id').equals(id).delete();
   await db.agentCheckpointWrites.where('thread_id').equals(id).delete();
-}
+};
 
 // --- Artifact CRUD ---
 
-export async function createArtifact(
+const createArtifact = async (
   data: Omit<Artifact, 'id' | 'createdAt' | 'updatedAt' | 'codeVersions'>,
-): Promise<Artifact> {
+): Promise<Artifact> => {
   const now = Date.now();
   const artifact: Artifact = {
     ...data,
@@ -119,17 +113,14 @@ export async function createArtifact(
   };
   await db.artifacts.add(artifact);
   return artifact;
-}
+};
 
-export async function getArtifact(id: string): Promise<Artifact | undefined> {
-  return db.artifacts.get(id);
-}
+const getArtifact = async (id: string): Promise<Artifact | undefined> => db.artifacts.get(id);
 
-export async function getArtifactsByExtension(extensionId: string): Promise<Artifact[]> {
-  return db.artifacts.where('extensionId').equals(extensionId).toArray();
-}
+const getArtifactsByExtension = async (extensionId: string): Promise<Artifact[]> =>
+  db.artifacts.where('extensionId').equals(extensionId).toArray();
 
-export async function updateArtifact(id: string, data: Partial<Artifact>): Promise<void> {
+const updateArtifact = async (id: string, data: Partial<Artifact>): Promise<void> => {
   const now = Date.now();
   const updates: Partial<Artifact> = { ...data, updatedAt: now };
 
@@ -143,11 +134,11 @@ export async function updateArtifact(id: string, data: Partial<Artifact>): Promi
   }
 
   await db.artifacts.update(id, updates);
-}
+};
 
-export async function deleteArtifact(id: string): Promise<void> {
+const deleteArtifact = async (id: string): Promise<void> => {
   await db.artifacts.delete(id);
-}
+};
 
 // URL pattern matching
 declare const URLPattern:
@@ -156,7 +147,7 @@ declare const URLPattern:
     }
   | undefined;
 
-function matchUrlPattern(pattern: string, url: string): boolean {
+const matchUrlPattern = (pattern: string, url: string): boolean => {
   try {
     if (typeof URLPattern !== 'undefined') {
       const p = new URLPattern(pattern);
@@ -169,4 +160,27 @@ function matchUrlPattern(pattern: string, url: string): boolean {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp('^' + escaped.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
   return regex.test(url);
-}
+};
+
+export {
+  db,
+  extensionDBManager,
+  createAgentConversation,
+  getAgentConversation,
+  addAgentMessage,
+  updateLastAgentMessage,
+  clearAgentConversation,
+  getSetting,
+  setSetting,
+  createExtension,
+  getExtension,
+  getAllExtensions,
+  getExtensionsByUrl,
+  updateExtension,
+  deleteExtension,
+  createArtifact,
+  getArtifact,
+  getArtifactsByExtension,
+  updateArtifact,
+  deleteArtifact,
+};

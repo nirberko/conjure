@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Artifact, WorkerLog } from '@extension/shared';
-import type { WorkerStatus } from './ArtifactCard';
 import { CodeBlock } from './CodeBlock';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import type { WorkerStatus } from './ArtifactCard';
+import type { Artifact, WorkerLog } from '@extension/shared';
 
 interface WorkerDetailProps {
   artifact: Artifact;
@@ -14,22 +14,22 @@ interface WorkerDetailProps {
 type Tab = 'logs' | 'code' | 'versions';
 type LogLevel = 'all' | 'log' | 'error';
 
-function formatTimestamp(ts: number): string {
+const formatTimestamp = (ts: number): string => {
   const d = new Date(ts);
   return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
+};
 
-function formatUptime(startedAt: number): string {
+const formatUptime = (startedAt: number): string => {
   const seconds = Math.floor((Date.now() - startedAt) / 1000);
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
   const hours = Math.floor(minutes / 60);
   return `${hours}h ${minutes % 60}m`;
-}
+};
 
-function formatLogArgs(args: unknown[]): string {
-  return args
+const formatLogArgs = (args: unknown[]): string =>
+  args
     .map(a => {
       if (typeof a === 'string') return a;
       try {
@@ -39,15 +39,8 @@ function formatLogArgs(args: unknown[]): string {
       }
     })
     .join(' ');
-}
 
-export function WorkerDetail({
-  artifact,
-  workerStatus,
-  onBack,
-  onStartWorker,
-  onStopWorker,
-}: WorkerDetailProps) {
+export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, onStopWorker }: WorkerDetailProps) => {
   const [activeTab, setActiveTab] = useState<Tab>('logs');
   const [logs, setLogs] = useState<WorkerLog[]>([]);
   const [levelFilter, setLevelFilter] = useState<LogLevel>('all');
@@ -128,11 +121,7 @@ export function WorkerDetail({
 
   const statusLabel = isRunning ? 'Running' : isError ? 'Error' : 'Stopped';
   const statusColor = isRunning ? 'text-emerald-500' : isError ? 'text-red-500' : 'text-slate-500';
-  const statusDot = isRunning
-    ? 'bg-emerald-500 animate-pulse'
-    : isError
-      ? 'bg-red-500'
-      : 'bg-slate-600';
+  const statusDot = isRunning ? 'bg-emerald-500 animate-pulse' : isError ? 'bg-red-500' : 'bg-slate-600';
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'logs', label: 'Logs' },
@@ -150,7 +139,7 @@ export function WorkerDetail({
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
             <div className="flex items-center gap-2">
-              <span className="sharp-badge border bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] text-emerald-400 border-emerald-500/30">
+              <span className="sharp-badge border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] text-emerald-400">
                 WORKER
               </span>
               <span className="text-[12px] font-medium text-slate-200">{artifact.name}</span>
@@ -158,9 +147,7 @@ export function WorkerDetail({
           </div>
           <div className="flex items-center gap-1.5">
             <div className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
-            <span className={`font-mono text-[9px] uppercase tracking-widest ${statusColor}`}>
-              {statusLabel}
-            </span>
+            <span className={`font-mono text-[9px] uppercase tracking-widest ${statusColor}`}>{statusLabel}</span>
           </div>
         </div>
 
@@ -215,9 +202,7 @@ export function WorkerDetail({
                 : 'border-b border-transparent text-slate-600 hover:text-slate-400'
             }`}>
             {tab.label}
-            {activeTab === tab.id && (
-              <span className="bg-primary absolute bottom-0 left-0 h-[1px] w-full blur-[2px]" />
-            )}
+            {activeTab === tab.id && <span className="bg-primary absolute bottom-0 left-0 h-[1px] w-full blur-[2px]" />}
             {tab.id === 'logs' && logs.length > 0 && activeTab !== 'logs' && (
               <span className="bg-primary/60 ml-1.5 inline-block h-1 w-1 rounded-full" />
             )}
@@ -295,12 +280,7 @@ export function WorkerDetail({
 
         {activeTab === 'code' && (
           <div className="h-full overflow-y-auto">
-            <CodeBlock
-              code={artifact.code}
-              language="javascript"
-              maxHeight="100%"
-              className="h-full"
-            />
+            <CodeBlock code={artifact.code} language="javascript" maxHeight="100%" className="h-full" />
           </div>
         )}
 
@@ -313,7 +293,9 @@ export function WorkerDetail({
             ) : (
               <>
                 {/* Version list */}
-                <div className="border-terminal-border overflow-y-auto border-b" style={{ maxHeight: selectedVersionIdx !== null ? '30%' : '100%' }}>
+                <div
+                  className="border-terminal-border overflow-y-auto border-b"
+                  style={{ maxHeight: selectedVersionIdx !== null ? '30%' : '100%' }}>
                   {[...artifact.codeVersions].reverse().map((version, i) => {
                     const actualIdx = artifact.codeVersions.length - 1 - i;
                     const isSelected = selectedVersionIdx === actualIdx;
@@ -361,4 +343,4 @@ export function WorkerDetail({
       </div>
     </div>
   );
-}
+};

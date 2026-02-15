@@ -2,7 +2,7 @@ import { dispatchWorkerTrigger } from './worker-manager.js';
 import { getAllExtensions, getArtifactsByExtension } from '@extension/shared';
 import type { Artifact } from '@extension/shared';
 
-export function matchUrlPattern(pattern: string, url: string): boolean {
+export const matchUrlPattern = (pattern: string, url: string): boolean => {
   try {
     if (typeof URLPattern !== 'undefined') {
       const p = new URLPattern(pattern);
@@ -14,9 +14,9 @@ export function matchUrlPattern(pattern: string, url: string): boolean {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
   const regex = new RegExp('^' + escaped.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
   return regex.test(url);
-}
+};
 
-export async function getMatchingExtensionArtifacts(url: string): Promise<Artifact[]> {
+export const getMatchingExtensionArtifacts = async (url: string): Promise<Artifact[]> => {
   const extensions = await getAllExtensions();
   const matching = extensions.filter(e => e.enabled && matchUrlPattern(e.urlPattern, url));
 
@@ -26,9 +26,9 @@ export async function getMatchingExtensionArtifacts(url: string): Promise<Artifa
     allArtifacts.push(...artifacts.filter(a => a.enabled));
   }
   return allArtifacts;
-}
+};
 
-export function setupTabListener() {
+export const setupTabListener = () => {
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.status !== 'complete' || !tab.url) return;
 
@@ -52,4 +52,4 @@ export function setupTabListener() {
       }
     }
   });
-}
+};

@@ -21,7 +21,7 @@ export default defineConfig({
       '@src': srcDir,
       '@assets': resolve(srcDir, 'assets'),
       'node:async_hooks': resolve(srcDir, 'shims', 'async-hooks.ts'),
-      'async_hooks': resolve(srcDir, 'shims', 'async-hooks.ts'),
+      async_hooks: resolve(srcDir, 'shims', 'async-hooks.ts'),
     },
   },
   plugins: [

@@ -28,7 +28,7 @@ const MODELS: Record<AIProvider, { value: string; label: string }[]> = {
   ],
 };
 
-export function ProviderSettings() {
+export const ProviderSettings = () => {
   const [provider, setProvider] = useState<AIProvider>('openai');
   const [apiKeys, setApiKeys] = useState<Record<AIProvider, string>>({
     openai: '',
@@ -116,11 +116,14 @@ export function ProviderSettings() {
         <div className="space-y-10">
           {/* 01. AI Provider */}
           <div className="space-y-1">
-            <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <label
+              htmlFor="provider-select"
+              className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
               AI Provider
             </label>
             <div className="group relative">
               <select
+                id="provider-select"
                 value={provider}
                 onChange={e => setProvider(e.target.value as AIProvider)}
                 className="minimal-input cursor-pointer appearance-none">
@@ -138,11 +141,14 @@ export function ProviderSettings() {
 
           {/* 02. API Access Key */}
           <div className="space-y-1">
-            <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <label
+              htmlFor="api-key-input"
+              className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
               API Access Key
             </label>
             <div className="relative">
               <input
+                id="api-key-input"
                 type={showKey ? 'text' : 'password'}
                 value={apiKeys[provider]}
                 onChange={e => setApiKeys(prev => ({ ...prev, [provider]: e.target.value }))}
@@ -163,11 +169,14 @@ export function ProviderSettings() {
 
           {/* 03. Agent Recursion Limit */}
           <div className="space-y-1">
-            <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <label
+              htmlFor="recursion-limit-input"
+              className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Agent Recursion Limit
             </label>
             <div className="flex items-center gap-3">
               <input
+                id="recursion-limit-input"
                 type="number"
                 min={RECURSION_LIMIT_MIN}
                 max={RECURSION_LIMIT_MAX}
@@ -187,11 +196,14 @@ export function ProviderSettings() {
 
           {/* 04. Neural Engine Selection */}
           <div className="space-y-1">
-            <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            <label
+              htmlFor="model-select"
+              className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
               Neural Engine Selection
             </label>
             <div className="group relative">
               <select
+                id="model-select"
                 value={model}
                 onChange={e => setModel(e.target.value)}
                 className="minimal-input cursor-pointer appearance-none">
@@ -242,4 +254,4 @@ export function ProviderSettings() {
       </footer>
     </div>
   );
-}
+};

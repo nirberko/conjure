@@ -3,8 +3,8 @@ import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
 import { ThinkingBlock } from './ThinkingBlock';
 import { UserInputForm } from './UserInputForm';
-import { getToolMetadata } from '../utils/tool-metadata';
 import { useAgentChat } from '../hooks/useAgentChat';
+import { getToolMetadata } from '../utils/tool-metadata';
 import { useState, useRef, useEffect } from 'react';
 import type { AgentMessage, ToolCallDisplay } from '../hooks/useAgentChat';
 
@@ -13,7 +13,7 @@ interface AgentChatPanelProps {
 }
 
 /** Relative time e.g. "2 hours ago", "a few seconds ago" */
-function formatRelativeTime(ms: number): string {
+const formatRelativeTime = (ms: number): string => {
   const sec = Math.floor((Date.now() - ms) / 1000);
   if (sec < 10) return 'a few seconds ago';
   if (sec < 60) return `${sec} seconds ago`;
@@ -26,9 +26,9 @@ function formatRelativeTime(ms: number): string {
   const d = Math.floor(hr / 24);
   if (d === 1) return '1 day ago';
   return `${d} days ago`;
-}
+};
 
-function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
+const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
   const [expanded, setExpanded] = useState(false);
   const toolMeta = getToolMetadata(toolCall.name);
 
@@ -62,9 +62,7 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
         onClick={() => hasDetails && setExpanded(e => !e)}
         className={`flex w-full items-center gap-2 text-left font-mono text-xs text-slate-500 ${hasDetails ? 'cursor-pointer hover:text-slate-400' : 'cursor-default'}`}>
         <span className="material-symbols-outlined text-[14px]">{toolMeta.icon}</span>
-        <span className="uppercase tracking-wider">
-          {toolMeta.label}
-        </span>
+        <span className="pointer-events-none uppercase tracking-wider">{toolMeta.label}</span>
         {statusIcon}
         {hasDetails && (
           <span
@@ -95,17 +93,19 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
       )}
     </div>
   );
-}
+};
 
 // Relative to side-panel page URL so it works in extension and dev
 const CONJURE_LOGO_URL = 'logo_vertical_dark.svg';
 
-function MessageBubble({ message }: { message: AgentMessage }) {
+const MessageBubble = ({ message }: { message: AgentMessage }) => {
   if (message.role === 'user') {
     return (
       <div className="flex items-start justify-end gap-3">
         <div className="flex max-w-[85%] flex-col items-end gap-1">
-          <div className="rounded-2xl rounded-tr-md bg-slate-600/40 px-4 py-2.5 text-left text-sm leading-relaxed text-slate-200" dir="ltr">
+          <div
+            className="rounded-2xl rounded-tr-md bg-slate-600/40 px-4 py-2.5 text-left text-sm leading-relaxed text-slate-200"
+            dir="ltr">
             <span className="whitespace-pre-wrap">{message.content}</span>
           </div>
           <div className="flex items-center gap-2 pr-1 text-[10px] text-slate-500">
@@ -128,15 +128,9 @@ function MessageBubble({ message }: { message: AgentMessage }) {
       {/* Header: icon + Conjure name on one row */}
       <div className="flex items-center gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-700/80">
-          <img
-            src={CONJURE_LOGO_URL}
-            alt="Conjure"
-            className="h-5 w-5 object-contain"
-          />
+          <img src={CONJURE_LOGO_URL} alt="Conjure" className="h-5 w-5 object-contain" />
         </div>
-        <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500">
-          Conjure
-        </div>
+        <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500">Conjure</div>
       </div>
       {/* Tools and response on the line below, fixed to the left */}
       <div className="space-y-2">
@@ -166,22 +160,30 @@ function MessageBubble({ message }: { message: AgentMessage }) {
 
         {/* Text content — no background */}
         {message.content && (
-          <div
-            className={`max-w-xl text-sm leading-relaxed ${isError ? 'text-red-400/80' : 'text-slate-300'}`}>
+          <div className={`max-w-xl text-sm leading-relaxed ${isError ? 'text-red-400/80' : 'text-slate-300'}`}>
             <MarkdownContent content={message.content} />
           </div>
         )}
-        <div className="text-[10px] text-slate-500">
-          {formatRelativeTime(message.timestamp)}
-        </div>
+        <div className="text-[10px] text-slate-500">{formatRelativeTime(message.timestamp)}</div>
       </div>
     </div>
   );
-}
+};
 
-export function AgentChatPanel({ extensionId }: AgentChatPanelProps) {
-  const { messages, isRunning, isLoading, activeThinking, pendingInputRequest, sendMessage, stopAgent, clearChat, submitUserInput, cancelUserInput } =
-    useAgentChat(extensionId);
+export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
+  const {
+    messages,
+    isRunning,
+    isLoading,
+    activeThinking,
+    pendingInputRequest,
+    sendMessage,
+    stopAgent,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    clearChat: _clearChat,
+    submitUserInput,
+    cancelUserInput,
+  } = useAgentChat(extensionId);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -273,4 +275,4 @@ export function AgentChatPanel({ extensionId }: AgentChatPanelProps) {
       </footer>
     </div>
   );
-}
+};

@@ -14,9 +14,10 @@ interface MockResponse {
  * Creates a mock chat model that returns scripted responses.
  * Each call to invoke() returns the next response in the queue.
  */
-export function createMockChatModel(responses: MockResponse[]) {
+export const createMockChatModel = (responses: MockResponse[]) => {
   let callIndex = 0;
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const invoke = async (_messages: BaseMessage[]) => {
     const response = responses[callIndex] ?? responses[responses.length - 1];
     callIndex++;
@@ -33,12 +34,11 @@ export function createMockChatModel(responses: MockResponse[]) {
     return msg;
   };
 
-  const bindTools = (_tools: unknown[]) => {
-    return { invoke, bindTools };
-  };
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const bindTools = (_tools: unknown[]) => ({ invoke, bindTools });
 
   return {
     invoke,
     bindTools,
   };
-}
+};

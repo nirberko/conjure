@@ -9,7 +9,7 @@ const workerStatuses = new Map<string, { status: string; artifactId: string; err
 const MAX_LOGS_PER_WORKER = 500;
 const workerLogs = new Map<string, WorkerLog[]>();
 
-export function pushWorkerLog(extensionId: string, level: 'log' | 'error', args: unknown[]): void {
+const pushWorkerLog = (extensionId: string, level: 'log' | 'error', args: unknown[]): void => {
   let logs = workerLogs.get(extensionId);
   if (!logs) {
     logs = [];
@@ -19,22 +19,20 @@ export function pushWorkerLog(extensionId: string, level: 'log' | 'error', args:
   if (logs.length > MAX_LOGS_PER_WORKER) {
     logs.splice(0, logs.length - MAX_LOGS_PER_WORKER);
   }
-}
+};
 
-export function getWorkerLogs(extensionId: string): WorkerLog[] {
-  return workerLogs.get(extensionId) ?? [];
-}
+const getWorkerLogs = (extensionId: string): WorkerLog[] => workerLogs.get(extensionId) ?? [];
 
-export function clearWorkerLogs(extensionId: string): void {
+const clearWorkerLogs = (extensionId: string): void => {
   workerLogs.delete(extensionId);
-}
+};
 
-async function sendToOffscreen(message: Record<string, unknown>): Promise<unknown> {
+const sendToOffscreen = async (message: Record<string, unknown>): Promise<unknown> => {
   await ensureOffscreenDocument();
   return chrome.runtime.sendMessage({ target: 'offscreen', ...message });
-}
+};
 
-export async function startBackgroundWorker(artifactId: string): Promise<{ success: boolean; error?: string }> {
+const startBackgroundWorker = async (artifactId: string): Promise<{ success: boolean; error?: string }> => {
   const artifact = await getArtifact(artifactId);
   if (!artifact || artifact.type !== 'background-worker') {
     return { success: false, error: 'Artifact not found or not a background-worker' };
@@ -52,9 +50,9 @@ export async function startBackgroundWorker(artifactId: string): Promise<{ succe
   }
 
   return result;
-}
+};
 
-export async function stopBackgroundWorker(extensionId: string): Promise<{ success: boolean }> {
+const stopBackgroundWorker = async (extensionId: string): Promise<{ success: boolean }> => {
   const result = (await sendToOffscreen({
     action: 'STOP_WORKER',
     extensionId,
@@ -69,9 +67,9 @@ export async function stopBackgroundWorker(extensionId: string): Promise<{ succe
   }
 
   return result;
-}
+};
 
-export async function reloadBackgroundWorker(artifactId: string): Promise<{ success: boolean; error?: string }> {
+const reloadBackgroundWorker = async (artifactId: string): Promise<{ success: boolean; error?: string }> => {
   const artifact = await getArtifact(artifactId);
   if (!artifact || artifact.type !== 'background-worker') {
     return { success: false, error: 'Artifact not found or not a background-worker' };
@@ -89,11 +87,11 @@ export async function reloadBackgroundWorker(artifactId: string): Promise<{ succ
   }
 
   return result;
-}
+};
 
-export async function getAllWorkerStatuses(): Promise<
+const getAllWorkerStatuses = async (): Promise<
   Record<string, { status: string; artifactId: string; error?: string }>
-> {
+> => {
   // If local cache is empty, the service worker may have restarted — query offscreen
   if (workerStatuses.size === 0) {
     try {
@@ -115,9 +113,9 @@ export async function getAllWorkerStatuses(): Promise<
     statuses[extId] = status;
   }
   return statuses;
-}
+};
 
-export function dispatchWorkerTrigger(extensionId: string, trigger: string, data: unknown): void {
+const dispatchWorkerTrigger = (extensionId: string, trigger: string, data: unknown): void => {
   if (!workerStatuses.has(extensionId)) return;
 
   sendToOffscreen({
@@ -128,9 +126,9 @@ export function dispatchWorkerTrigger(extensionId: string, trigger: string, data
   }).catch(err => {
     console.warn(`[Conjure] Failed to dispatch trigger ${trigger} to worker ${extensionId}:`, err);
   });
-}
+};
 
-export function broadcastStorageChange(extensionId: string, changes: unknown): void {
+const broadcastStorageChange = (extensionId: string, changes: unknown): void => {
   if (!workerStatuses.has(extensionId)) return;
 
   sendToOffscreen({
@@ -140,9 +138,9 @@ export function broadcastStorageChange(extensionId: string, changes: unknown): v
   }).catch(err => {
     console.warn('[Conjure] Failed to broadcast storage change:', err);
   });
-}
+};
 
-export function handleWorkerStatusUpdate(extensionId: string, status: string, error?: string): void {
+const handleWorkerStatusUpdate = (extensionId: string, status: string, error?: string): void => {
   if (status === 'stopped' || status === 'not_found') {
     workerStatuses.delete(extensionId);
   } else {
@@ -155,9 +153,9 @@ export function handleWorkerStatusUpdate(extensionId: string, status: string, er
       workerStatuses.set(extensionId, { status, artifactId: '', error });
     }
   }
-}
+};
 
-export async function handleWorkerApiCall(requestId: string, method: string, args: unknown[]): Promise<void> {
+const handleWorkerApiCall = async (requestId: string, method: string, args: unknown[]): Promise<void> => {
   let result: unknown;
   let error: string | undefined;
 
@@ -271,9 +269,9 @@ export async function handleWorkerApiCall(requestId: string, method: string, arg
       error,
     })
     .catch(() => {});
-}
+};
 
-export async function autoStartBackgroundWorkers(): Promise<void> {
+const autoStartBackgroundWorkers = async (): Promise<void> => {
   const extensions = await getAllExtensions();
   const enabledExtensions = extensions.filter(e => e.enabled);
 
@@ -287,4 +285,19 @@ export async function autoStartBackgroundWorkers(): Promise<void> {
       });
     }
   }
-}
+};
+
+export {
+  pushWorkerLog,
+  getWorkerLogs,
+  clearWorkerLogs,
+  startBackgroundWorker,
+  stopBackgroundWorker,
+  reloadBackgroundWorker,
+  getAllWorkerStatuses,
+  dispatchWorkerTrigger,
+  broadcastStorageChange,
+  handleWorkerStatusUpdate,
+  handleWorkerApiCall,
+  autoStartBackgroundWorkers,
+};

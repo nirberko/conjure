@@ -1,14 +1,14 @@
+import { extensionDBManager } from '../../db/index.js';
+import { REQUEST_USER_INPUT_TOOL_NAME } from '../../types/index.js';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
-import { REQUEST_USER_INPUT_TOOL_NAME } from '../../types/index.js';
-import { extensionDBManager } from '../../db/index.js';
 
 export { REQUEST_USER_INPUT_TOOL_NAME };
 
-export function createRequestUserInputTool(ctx: ToolContext) {
-  return tool(
-    async (input) => {
+export const createRequestUserInputTool = (ctx: ToolContext) =>
+  tool(
+    async input => {
       try {
         const resultPromise = ctx.waitForMessage('USER_INPUT_RESULT', 300000);
 
@@ -26,7 +26,10 @@ export function createRequestUserInputTool(ctx: ToolContext) {
         const envFields = input.fields.filter(f => f.envKey);
         const envVarsStored: string[] = [];
         if (envFields.length > 0 && ctx.extensionId) {
-          const existing = ((await extensionDBManager.storageGet(ctx.extensionId, '_env')) ?? {}) as Record<string, string>;
+          const existing = ((await extensionDBManager.storageGet(ctx.extensionId, '_env')) ?? {}) as Record<
+            string,
+            string
+          >;
           for (const field of envFields) {
             const val = payload[field.name];
             if (val !== undefined && val !== null && field.envKey) {
@@ -39,9 +42,7 @@ export function createRequestUserInputTool(ctx: ToolContext) {
 
         // Redact password field values so they don't persist in conversation history
         const redacted: Record<string, string | number> = {};
-        const passwordFields = new Set(
-          input.fields.filter(f => f.type === 'password').map(f => f.name),
-        );
+        const passwordFields = new Set(input.fields.filter(f => f.type === 'password').map(f => f.name));
         for (const [key, value] of Object.entries(payload)) {
           redacted[key] = passwordFields.has(key) ? '***' : value;
         }
@@ -76,7 +77,12 @@ export function createRequestUserInputTool(ctx: ToolContext) {
               required: z.boolean().optional().describe('Whether the field is required (default: false)'),
               description: z.string().optional().describe('Help text displayed below the input'),
               placeholder: z.string().optional().describe('Placeholder text for the input'),
-              envKey: z.string().optional().describe('If set, the field value will be auto-stored as an environment variable with this key name (accessible via conjure.env.get() in workers or context.env.get() in components). Use this for API keys and secrets so they are securely stored and available to artifacts without appearing in conversation history.'),
+              envKey: z
+                .string()
+                .optional()
+                .describe(
+                  'If set, the field value will be auto-stored as an environment variable with this key name (accessible via conjure.env.get() in workers or context.env.get() in components). Use this for API keys and secrets so they are securely stored and available to artifacts without appearing in conversation history.',
+                ),
             }),
           )
           .describe('Array of input fields to display in the form'),
@@ -85,4 +91,3 @@ export function createRequestUserInputTool(ctx: ToolContext) {
       }),
     },
   );
-}

@@ -4,7 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 import type { AIProvider } from '../types/index.js';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 
-export interface ProviderConfig {
+interface ProviderConfig {
   provider: AIProvider;
   apiKey: string;
   model: string;
@@ -16,7 +16,7 @@ const DEFAULT_MODELS: Record<AIProvider, string> = {
   google: 'gemini-2.0-flash',
 };
 
-export function createChatModel(config: ProviderConfig): BaseChatModel {
+const createChatModel = (config: ProviderConfig): BaseChatModel => {
   const model = config.model || DEFAULT_MODELS[config.provider];
   console.log('[Conjure Model] Creating model:', config.provider, model);
 
@@ -42,13 +42,11 @@ export function createChatModel(config: ProviderConfig): BaseChatModel {
     default:
       throw new Error(`Unsupported AI provider: ${config.provider}`);
   }
-}
+};
 
-export function getDefaultModel(provider: AIProvider): string {
-  return DEFAULT_MODELS[provider];
-}
+const getDefaultModel = (provider: AIProvider): string => DEFAULT_MODELS[provider];
 
-export function getAvailableModels(provider: AIProvider): string[] {
+const getAvailableModels = (provider: AIProvider): string[] => {
   switch (provider) {
     case 'openai':
       return ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'];
@@ -59,4 +57,7 @@ export function getAvailableModels(provider: AIProvider): string[] {
     default:
       return [];
   }
-}
+};
+
+export { createChatModel, getDefaultModel, getAvailableModels };
+export type { ProviderConfig };

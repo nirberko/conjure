@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 type MessageListener = (message: unknown, sender: unknown, sendResponse: (response?: unknown) => void) => void;
 
-export function createChromeMock() {
+export const createChromeMock = () => {
   const messageListeners: MessageListener[] = [];
 
   const mock = {
@@ -68,4 +68,4 @@ export function createChromeMock() {
   };
 
   return mock;
-}
+};

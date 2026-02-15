@@ -4,7 +4,7 @@ interface AgentThinkingProps {
   onStop: () => void;
 }
 
-export function AgentThinking({ isRunning, isThinking, onStop }: AgentThinkingProps) {
+export const AgentThinking = ({ isRunning, isThinking, onStop }: AgentThinkingProps) => {
   if (!isRunning) return null;
 
   const label = isThinking ? 'Thinking...' : 'Agent is working...';
@@ -24,4 +24,4 @@ export function AgentThinking({ isRunning, isThinking, onStop }: AgentThinkingPr
       </button>
     </div>
   );
-}
+};

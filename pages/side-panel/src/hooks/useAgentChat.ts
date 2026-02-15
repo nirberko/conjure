@@ -6,7 +6,14 @@ import {
   REQUEST_USER_INPUT_TOOL_NAME,
 } from '@extension/shared';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { Artifact, AgentChatMessage, ToolCallDisplay, ThinkingData, MessageDisplayItem, UserInputRequest } from '@extension/shared';
+import type {
+  Artifact,
+  AgentChatMessage,
+  ToolCallDisplay,
+  ThinkingData,
+  MessageDisplayItem,
+  UserInputRequest,
+} from '@extension/shared';
 
 export type { ToolCallDisplay, ThinkingData, MessageDisplayItem } from '@extension/shared';
 export type AgentMessage = AgentChatMessage;
@@ -15,7 +22,7 @@ export interface ActiveThinking {
   startTime: number;
 }
 
-export function useAgentChat(extensionId: string) {
+export const useAgentChat = (extensionId: string) => {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -290,9 +297,7 @@ export function useAgentChat(extensionId: string) {
           setMessages(prev => [...prev, errorMsg]);
           setIsRunning(false);
           // Persist the error message
-          addAgentMessage(extensionId, errorMsg).catch(err =>
-            console.error('[Conjure] Failed to persist error:', err),
-          );
+          addAgentMessage(extensionId, errorMsg).catch(err => console.error('[Conjure] Failed to persist error:', err));
           break;
         }
 
@@ -382,15 +387,12 @@ export function useAgentChat(extensionId: string) {
     pendingDisplayItems.current = [];
   }, [extensionId]);
 
-  const submitUserInput = useCallback(
-    (values: Record<string, string | number>) => {
-      chrome.runtime
-        .sendMessage({ type: 'USER_INPUT_RESULT', payload: values })
-        .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT:', err));
-      setPendingInputRequest(null);
-    },
-    [],
-  );
+  const submitUserInput = useCallback((values: Record<string, string | number>) => {
+    chrome.runtime
+      .sendMessage({ type: 'USER_INPUT_RESULT', payload: values })
+      .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT:', err));
+    setPendingInputRequest(null);
+  }, []);
 
   const cancelUserInput = useCallback(() => {
     chrome.runtime
@@ -407,5 +409,17 @@ export function useAgentChat(extensionId: string) {
     clearAgentConversation(extensionId).catch(err => console.error('[Conjure] Failed to clear conversation:', err));
   }, [extensionId]);
 
-  return { messages, isRunning, isLoading, artifacts, activeThinking, pendingInputRequest, sendMessage, stopAgent, clearChat, submitUserInput, cancelUserInput };
-}
+  return {
+    messages,
+    isRunning,
+    isLoading,
+    artifacts,
+    activeThinking,
+    pendingInputRequest,
+    sendMessage,
+    stopAgent,
+    clearChat,
+    submitUserInput,
+    cancelUserInput,
+  };
+};

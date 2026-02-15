@@ -1,4 +1,4 @@
-import type { AIProvider, Artifact, TabInfo, AgentAction } from '../types/index.js';
+import type { AIProvider, Artifact, TabInfo } from '../types/index.js';
 
 export interface AgentRunConfig {
   extensionId: string;

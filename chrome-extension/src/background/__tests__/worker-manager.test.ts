@@ -1,20 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createExtension,
-  createArtifact,
-  getAllExtensions,
-  getArtifactsByExtension,
-  extensionDBManager,
-} from '@extension/shared';
-import type { Artifact } from '@extension/shared';
-
-// Mock the offscreen-manager module so worker-manager doesn't actually create offscreen docs
-vi.mock('../offscreen-manager.js', () => ({
-  ensureOffscreenDocument: vi.fn().mockResolvedValue(undefined),
-  closeOffscreenIfEmpty: vi.fn().mockResolvedValue(undefined),
-}));
-
-// Import after mock setup
+import { ensureOffscreenDocument, closeOffscreenIfEmpty } from '../offscreen-manager.js';
 import {
   startBackgroundWorker,
   stopBackgroundWorker,
@@ -25,11 +9,20 @@ import {
   handleWorkerApiCall,
   autoStartBackgroundWorkers,
 } from '../worker-manager.js';
+import { createExtension, createArtifact, getAllExtensions, extensionDBManager } from '@extension/shared';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Artifact } from '@extension/shared';
 
-import { ensureOffscreenDocument, closeOffscreenIfEmpty } from '../offscreen-manager.js';
+// Import after mock setup
+
+// Mock the offscreen-manager module so worker-manager doesn't actually create offscreen docs
+vi.mock('../offscreen-manager.js', () => ({
+  ensureOffscreenDocument: vi.fn().mockResolvedValue(undefined),
+  closeOffscreenIfEmpty: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Helper: create a background-worker artifact in the DB
-async function createWorkerArtifact(extensionId: string, code = 'console.log("worker")'): Promise<Artifact> {
+const createWorkerArtifact = async (extensionId: string, code = 'console.log("worker")'): Promise<Artifact> => {
   // Ensure the extension exists
   const exts = await getAllExtensions();
   if (!exts.find(e => e.id === extensionId)) {
@@ -53,7 +46,7 @@ async function createWorkerArtifact(extensionId: string, code = 'console.log("wo
   });
 
   return artifact as Artifact;
-}
+};
 
 describe('WorkerManager', () => {
   beforeEach(async () => {
@@ -207,7 +200,7 @@ describe('WorkerManager', () => {
 
       handleWorkerStatusUpdate(artifact.extensionId, 'stopped');
 
-      const statuses = await getAllWorkerStatuses();
+      await getAllWorkerStatuses();
       // Need to prevent offscreen query from re-populating
       chrome.runtime.sendMessage = vi.fn().mockResolvedValue({});
       const freshStatuses = await getAllWorkerStatuses();
