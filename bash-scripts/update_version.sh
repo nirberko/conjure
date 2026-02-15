@@ -4,11 +4,8 @@
 
 if [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   find . -name 'package.json' -not -path '*/node_modules/*' -exec bash -c '
-    # Parse the version from package.json
-    current_version=$(grep -o "\"version\"[[:space:]]*:[[:space:]]*\"[^\"]*" "$0" | cut -d"\"" -f4)
-
-    # Update the version
-    perl -i -pe"s/$current_version/'$1'/" "$0"
+    # Update only the "version" field, not dependency versions
+    perl -i -pe"s/\"version\"(\s*:\s*)\"[^\"]+\"/\"version\"\$1\"'$1'\"/" "$0"
   '  {} \;
 
   echo "Updated versions to $1";
