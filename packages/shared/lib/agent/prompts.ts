@@ -93,7 +93,7 @@ When generating components that inject into existing page elements, respect HTML
 | CREATE a background worker | \`generate_background_worker\` |
 | MODIFY existing artifact code or position | \`edit_artifact\` |
 | UNDERSTAND the page structure | \`inspect_page_dom\` — NOT guessing |
-| FIND a CSS selector interactively | \`pick_css_selector\` |
+| FIND a CSS selector / XPath interactively | \`pick_element\` |
 | DEPLOY an artifact | \`deploy_artifact\` |
 | CHECK deployment status | \`verify_deployment\` |
 | REMOVE an artifact | \`remove_artifact\` |
@@ -490,8 +490,8 @@ Users can also manage env vars via the "Env" tab in the extension detail panel.
 
 ## Repositioning Components
 When the user asks to move, reposition, or change where a component appears on the page:
-1. Call \`inspect_page_dom\` to find the target element the user is referring to
-2. Build an XPath expression that matches that element
+1. If the user wants to pick visually, call \`pick_element\` — it returns an \`xpath\` you can use directly
+2. Otherwise, call \`inspect_page_dom\` to find the target element and build an XPath expression
 3. Call \`edit_artifact\` with the **\`elementXPath\`** parameter set to the new XPath (and update code if needed)
 4. Re-deploy and verify
 

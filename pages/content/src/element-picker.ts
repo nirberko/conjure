@@ -3,6 +3,36 @@ let label: HTMLDivElement | null = null;
 let active = false;
 let hoveredElement: Element | null = null;
 
+const getXPath = (el: Element): string => {
+  if (el.id) return `//*[@id="${el.id}"]`;
+
+  const parts: string[] = [];
+  let current: Element | null = el;
+
+  while (current && current !== document.body && current !== document.documentElement) {
+    let tag = current.tagName.toLowerCase();
+    const parent = current.parentElement;
+
+    if (current.id) {
+      parts.unshift(`*[@id="${current.id}"]`);
+      break;
+    }
+
+    if (parent) {
+      const siblings = Array.from(parent.children).filter(c => c.tagName === current!.tagName);
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(current) + 1;
+        tag += `[${index}]`;
+      }
+    }
+
+    parts.unshift(tag);
+    current = current.parentElement;
+  }
+
+  return '//' + parts.join('/');
+};
+
 const getCssSelector = (el: Element): string => {
   if (el.id) return `#${el.id}`;
 
@@ -86,9 +116,10 @@ const onClick = (e: MouseEvent) => {
   e.stopPropagation();
 
   const selector = getCssSelector(hoveredElement);
+  const xpath = getXPath(hoveredElement);
   chrome.runtime.sendMessage({
     type: 'PICKER_RESULT',
-    payload: { selector, tagName: hoveredElement.tagName.toLowerCase() },
+    payload: { selector, xpath, tagName: hoveredElement.tagName.toLowerCase() },
   });
 
   deactivate();

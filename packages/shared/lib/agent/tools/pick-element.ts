@@ -17,7 +17,11 @@ export const createPickElementTool = (ctx: ToolContext) =>
         await ctx.sendToContentScript(ctx.tabId, { type: 'ACTIVATE_PICKER' });
 
         // Wait for the user to pick an element (or cancel/timeout)
-        const payload = (await resultPromise) as { selector: string; tagName: string } | null;
+        const payload = (await resultPromise) as {
+          selector: string;
+          xpath: string;
+          tagName: string;
+        } | null;
 
         if (payload === null) {
           return JSON.stringify({
@@ -30,6 +34,7 @@ export const createPickElementTool = (ctx: ToolContext) =>
         return JSON.stringify({
           success: true,
           selector: payload.selector,
+          xpath: payload.xpath,
           tagName: payload.tagName,
         });
       } catch (error) {
@@ -46,7 +51,7 @@ export const createPickElementTool = (ctx: ToolContext) =>
     {
       name: 'pick_element',
       description:
-        'Activate the visual element picker on the page and wait for the user to select an element. Returns the CSS selector and tag name of the selected element. The picker will timeout after 60 seconds if no element is selected.',
+        'Activate the visual element picker on the page and wait for the user to select an element. Returns the CSS selector, XPath expression, and tag name of the selected element. Use the returned xpath directly as elementXPath when repositioning artifacts via edit_artifact. The picker will timeout after 60 seconds if no element is selected.',
       schema: z.object({}),
     },
   );
