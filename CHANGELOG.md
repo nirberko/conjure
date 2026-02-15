@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/nirberko/conjure/compare/v1.0.0...v1.1.0) (2026-02-15)
+
+
+### Features
+
+* **agent:** add inspect_page_theme tool to analyze site design system and update prompts to emphasize styling alignment ([a37e5c0](https://github.com/nirberko/conjure/commit/a37e5c0e441fd8260fe6f2df958bc344fb3c8465))
+
 # 1.0.0 (2026-02-15)
 
 
