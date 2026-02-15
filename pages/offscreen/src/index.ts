@@ -61,7 +61,7 @@ window.addEventListener('message', (event: MessageEvent) => {
   }
 });
 
-function findIframeBySource(source: MessageEventSource | null): HTMLIFrameElement | undefined {
+const findIframeBySource = (source: MessageEventSource | null): HTMLIFrameElement | undefined => {
   if (!source) return undefined;
   for (const [, worker] of getAllWorkers()) {
     if (worker.iframe.contentWindow === source) {
@@ -69,7 +69,7 @@ function findIframeBySource(source: MessageEventSource | null): HTMLIFrameElemen
     }
   }
   return undefined;
-}
+};
 
 // ---------------------------------------------------------------------------
 // chrome.runtime message handler: service worker → offscreen
@@ -138,11 +138,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 // Worker lifecycle
 // ---------------------------------------------------------------------------
 
-async function startWorker(
+const startWorker = async (
   extensionId: string,
   artifactId: string,
   code: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   // Stop existing worker for this extension if any
   const existing = getWorker(extensionId);
   if (existing) {
@@ -163,7 +163,7 @@ async function startWorker(
   });
 
   // Create a one-time promise to capture the EXEC_RESULT from the sandbox
-  const execResult = await new Promise<{ success: boolean; error?: string }>((resolve) => {
+  const execResult = await new Promise<{ success: boolean; error?: string }>(resolve => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== iframe.contentWindow) return;
       const msg = event.data;
@@ -175,10 +175,7 @@ async function startWorker(
     window.addEventListener('message', onMessage);
 
     // Send code to sandbox for execution
-    iframe.contentWindow!.postMessage(
-      { type: 'EXEC_WORKER', code, extensionId, artifactId },
-      '*',
-    );
+    iframe.contentWindow!.postMessage({ type: 'EXEC_WORKER', code, extensionId, artifactId }, '*');
   });
 
   if (execResult.success) {
@@ -194,9 +191,9 @@ async function startWorker(
     console.error(`[Conjure Offscreen] Worker start failed for ${extensionId}:`, execResult.error);
     return { success: false, error: execResult.error };
   }
-}
+};
 
-function dispatchTrigger(extensionId: string, trigger: string, data: unknown): { success: boolean; error?: string } {
+const dispatchTrigger = (extensionId: string, trigger: string, data: unknown): { success: boolean; error?: string } => {
   const instance = getWorker(extensionId);
   if (!instance || instance.status !== 'running') {
     return { success: false, error: 'Worker not running' };
@@ -204,18 +201,18 @@ function dispatchTrigger(extensionId: string, trigger: string, data: unknown): {
 
   instance.iframe.contentWindow?.postMessage({ type: 'DISPATCH_TRIGGER', trigger, data }, '*');
   return { success: true };
-}
+};
 
-function forwardApiResponse(requestId: string, result: unknown, error?: string) {
+const forwardApiResponse = (requestId: string, result: unknown, error?: string) => {
   // Send the API response to all worker iframes — the sandbox will match by requestId
   for (const [, worker] of getAllWorkers()) {
     if (worker.status === 'running') {
       worker.iframe.contentWindow?.postMessage({ type: 'API_RESPONSE', requestId, result, error }, '*');
     }
   }
-}
+};
 
-function notifyStatusUpdate(extensionId: string, status: string, error?: string) {
+const notifyStatusUpdate = (extensionId: string, status: string, error?: string) => {
   chrome.runtime
     .sendMessage({
       target: 'service-worker',
@@ -225,7 +222,7 @@ function notifyStatusUpdate(extensionId: string, status: string, error?: string)
       ...(error ? { error } : {}),
     })
     .catch(() => {});
-}
+};
 
 // Notify service worker that offscreen is ready
 chrome.runtime

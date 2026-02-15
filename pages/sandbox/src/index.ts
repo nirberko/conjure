@@ -1,5 +1,5 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
+import React, { createElement } from 'react';
+import ReactDOM, { createRoot } from 'react-dom/client';
 import { transform } from 'sucrase';
 
 type MessageType =
@@ -40,7 +40,7 @@ window.addEventListener('message', event => {
   }
 });
 
-function handleRender(msg: { code: string; componentId: string; pageUrl: string }) {
+const handleRender = (msg: { code: string; componentId: string; pageUrl: string }) => {
   try {
     // Clean up previous render
     if (currentRoot) {
@@ -84,30 +84,30 @@ function handleRender(msg: { code: string; componentId: string; pageUrl: string 
       return;
     }
 
-    currentRoot = ReactDOM.createRoot(rootEl);
-    currentRoot.render(React.createElement(Component, { context }));
+    currentRoot = createRoot(rootEl);
+    currentRoot.render(createElement(Component, { context }));
     postToParent({ type: 'RENDER_SUCCESS' });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     postToParent({ type: 'RENDER_ERROR', error: message });
   }
-}
+};
 
-function handleDataResponse(msg: { requestId: string; data: Record<string, unknown> }) {
+const handleDataResponse = (msg: { requestId: string; data: Record<string, unknown> }) => {
   const resolve = pendingRequests.get(msg.requestId);
   if (resolve) {
     pendingRequests.delete(msg.requestId);
     resolve(msg.data);
   }
-}
+};
 
-function handleSetDataResponse(msg: { requestId: string }) {
+const handleSetDataResponse = (msg: { requestId: string }) => {
   const resolve = pendingRequests.get(msg.requestId);
   if (resolve) {
     pendingRequests.delete(msg.requestId);
     resolve(undefined);
   }
-}
+};
 
 // Observe size changes and report to parent for iframe auto-sizing
 const resizeObserver = new ResizeObserver(entries => {
@@ -118,6 +118,6 @@ const resizeObserver = new ResizeObserver(entries => {
 });
 resizeObserver.observe(rootEl);
 
-function postToParent(msg: SandboxMessage) {
+const postToParent = (msg: SandboxMessage) => {
   window.parent.postMessage(msg, '*');
-}
+};

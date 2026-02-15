@@ -49,18 +49,16 @@ const trackedIntervals = new Set<ReturnType<typeof setInterval>>();
 const pendingApiCalls = new Map<string, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
 let nextRequestId = 0;
-let currentExtensionId = '';
-let currentArtifactId = '';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function sendToParent(msg: Record<string, unknown>) {
+const sendToParent = (msg: Record<string, unknown>) => {
   parent.postMessage(msg, '*');
-}
+};
 
-function callApi(method: string, args: unknown[]): Promise<unknown> {
+const callApi = (method: string, args: unknown[]): Promise<unknown> => {
   const requestId = `wapi_${++nextRequestId}_${Date.now()}`;
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
@@ -81,9 +79,9 @@ function callApi(method: string, args: unknown[]): Promise<unknown> {
 
     sendToParent({ type: 'API_CALL', requestId, method, args });
   });
-}
+};
 
-function cleanup() {
+const cleanup = () => {
   for (const t of trackedTimers) clearTimeout(t);
   trackedTimers.clear();
   for (const i of trackedIntervals) clearInterval(i);
@@ -93,37 +91,37 @@ function cleanup() {
     pending.reject(new Error('Worker stopped'));
   }
   pendingApiCalls.clear();
-}
+};
 
 // ---------------------------------------------------------------------------
 // Conjure shim (equivalent to the old worker-shim.ts)
 // ---------------------------------------------------------------------------
 
-function createShim(extensionId: string, artifactId: string) {
-  function trackedSetTimeout(fn: (...args: unknown[]) => void, ms?: number): ReturnType<typeof setTimeout> {
+const createShim = (extensionId: string, artifactId: string) => {
+  const trackedSetTimeout = (fn: (...args: unknown[]) => void, ms?: number): ReturnType<typeof setTimeout> => {
     const handle = setTimeout(() => {
       trackedTimers.delete(handle);
       fn();
     }, ms);
     trackedTimers.add(handle);
     return handle;
-  }
+  };
 
-  function trackedSetInterval(fn: (...args: unknown[]) => void, ms?: number): ReturnType<typeof setInterval> {
+  const trackedSetInterval = (fn: (...args: unknown[]) => void, ms?: number): ReturnType<typeof setInterval> => {
     const handle = setInterval(fn, ms);
     trackedIntervals.add(handle);
     return handle;
-  }
+  };
 
-  function trackedClearTimeout(handle: ReturnType<typeof setTimeout>) {
+  const trackedClearTimeout = (handle: ReturnType<typeof setTimeout>) => {
     clearTimeout(handle);
     trackedTimers.delete(handle);
-  }
+  };
 
-  function trackedClearInterval(handle: ReturnType<typeof setInterval>) {
+  const trackedClearInterval = (handle: ReturnType<typeof setInterval>) => {
     clearInterval(handle);
     trackedIntervals.delete(handle);
-  }
+  };
 
   return {
     on(event: string, handler: (...args: unknown[]) => void) {
@@ -249,7 +247,7 @@ function createShim(extensionId: string, artifactId: string) {
     clearTimeout: trackedClearTimeout,
     clearInterval: trackedClearInterval,
   };
-}
+};
 
 // ---------------------------------------------------------------------------
 // Message handler
@@ -262,8 +260,6 @@ window.addEventListener('message', (event: MessageEvent<InboundMessage>) => {
   switch (msg.type) {
     case 'EXEC_WORKER': {
       cleanup();
-      currentExtensionId = msg.extensionId;
-      currentArtifactId = msg.artifactId;
       const shim = createShim(msg.extensionId, msg.artifactId);
       try {
         const workerFn = new Function('conjure', msg.code);

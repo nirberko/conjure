@@ -4,32 +4,26 @@ const injectedArtifacts = new Map<string, { elements: HTMLElement[]; cleanup: ()
 const pendingInjections = new Set<string>();
 let runtimePromise: Promise<void> | null = null;
 
-async function injectReactRuntime(): Promise<void> {
+const injectReactRuntime = async (): Promise<void> => {
   if (!runtimePromise) {
     runtimePromise = chrome.runtime.sendMessage({ type: 'INJECT_REACT_RUNTIME' });
   }
   await runtimePromise;
-}
+};
 
-function evaluateXPath(xpath: string): Element[] {
-  const result = document.evaluate(
-    xpath,
-    document,
-    null,
-    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
-    null,
-  );
+const evaluateXPath = (xpath: string): Element[] => {
+  const result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
   const elements: Element[] = [];
   for (let i = 0; i < result.snapshotLength; i++) {
     const node = result.snapshotItem(i);
     if (node instanceof Element) elements.push(node);
   }
   return elements;
-}
+};
 
 // --- Artifact Injection System ---
 
-export async function injectArtifact(artifact: Artifact): Promise<{ success: boolean; error?: string }> {
+const injectArtifact = async (artifact: Artifact): Promise<{ success: boolean; error?: string }> => {
   switch (artifact.type) {
     case 'react-component':
       return injectReactArtifact(artifact);
@@ -40,9 +34,9 @@ export async function injectArtifact(artifact: Artifact): Promise<{ success: boo
     default:
       return { success: false, error: `Unknown artifact type: ${artifact.type}` };
   }
-}
+};
 
-async function injectReactArtifact(artifact: Artifact): Promise<{ success: boolean; error?: string }> {
+const injectReactArtifact = async (artifact: Artifact): Promise<{ success: boolean; error?: string }> => {
   if (pendingInjections.has(artifact.id)) return { success: false, error: 'Already injecting' };
 
   removeArtifact(artifact.id);
@@ -52,9 +46,7 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
     await injectReactRuntime();
 
     // Determine target elements: XPath expression or document.body
-    const targets = artifact.elementXPath
-      ? evaluateXPath(artifact.elementXPath)
-      : [document.body];
+    const targets = artifact.elementXPath ? evaluateXPath(artifact.elementXPath) : [document.body];
 
     if (artifact.elementXPath && targets.length === 0) {
       return { success: false, error: `No elements found for XPath: ${artifact.elementXPath}` };
@@ -169,9 +161,9 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
   } finally {
     pendingInjections.delete(artifact.id);
   }
-}
+};
 
-async function injectScript(artifact: Artifact): Promise<{ success: boolean; error?: string }> {
+const injectScript = async (artifact: Artifact): Promise<{ success: boolean; error?: string }> => {
   removeArtifact(artifact.id);
 
   try {
@@ -188,9 +180,9 @@ async function injectScript(artifact: Artifact): Promise<{ success: boolean; err
   } catch (error) {
     return { success: false, error: String(error) };
   }
-}
+};
 
-async function injectCSS(artifact: Artifact): Promise<{ success: boolean; error?: string }> {
+const injectCSS = async (artifact: Artifact): Promise<{ success: boolean; error?: string }> => {
   removeArtifact(artifact.id);
 
   try {
@@ -205,17 +197,19 @@ async function injectCSS(artifact: Artifact): Promise<{ success: boolean; error?
   } catch (error) {
     return { success: false, error: String(error) };
   }
-}
+};
 
-export function removeArtifact(artifactId: string) {
+const removeArtifact = (artifactId: string) => {
   const entry = injectedArtifacts.get(artifactId);
   if (entry) {
     entry.cleanup();
     entry.elements.forEach(el => el.remove());
     injectedArtifacts.delete(artifactId);
   }
-}
+};
 
-export function isArtifactInjected(artifactId: string): boolean {
+const isArtifactInjected = (artifactId: string): boolean => {
   return injectedArtifacts.has(artifactId);
-}
+};
+
+export { injectArtifact, removeArtifact, isArtifactInjected };

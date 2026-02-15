@@ -3,7 +3,7 @@ let label: HTMLDivElement | null = null;
 let active = false;
 let hoveredElement: Element | null = null;
 
-function getCssSelector(el: Element): string {
+const getCssSelector = (el: Element): string => {
   if (el.id) return `#${el.id}`;
 
   const parts: string[] = [];
@@ -42,9 +42,9 @@ function getCssSelector(el: Element): string {
   }
 
   return parts.join(' > ');
-}
+};
 
-function createOverlay() {
+const createOverlay = () => {
   overlay = document.createElement('div');
   overlay.style.cssText =
     'position:fixed;pointer-events:none;border:2px solid #3b82f6;background:rgba(59,130,246,0.1);z-index:2147483647;transition:all 0.1s ease;display:none;';
@@ -55,9 +55,9 @@ function createOverlay() {
 
   document.documentElement.appendChild(overlay);
   document.documentElement.appendChild(label);
-}
+};
 
-function onMouseMove(e: MouseEvent) {
+const onMouseMove = (e: MouseEvent) => {
   if (!active || !overlay || !label) return;
 
   const target = e.target as Element;
@@ -77,9 +77,9 @@ function onMouseMove(e: MouseEvent) {
   label.style.display = 'block';
   label.style.top = Math.max(0, rect.top - 28) + 'px';
   label.style.left = rect.left + 'px';
-}
+};
 
-function onClick(e: MouseEvent) {
+const onClick = (e: MouseEvent) => {
   if (!active || !hoveredElement) return;
 
   e.preventDefault();
@@ -92,9 +92,9 @@ function onClick(e: MouseEvent) {
   });
 
   deactivate();
-}
+};
 
-function onKeyDown(e: KeyboardEvent) {
+const onKeyDown = (e: KeyboardEvent) => {
   if (e.key === 'Escape') {
     chrome.runtime.sendMessage({
       type: 'PICKER_RESULT',
@@ -102,9 +102,9 @@ function onKeyDown(e: KeyboardEvent) {
     });
     deactivate();
   }
-}
+};
 
-export function activate() {
+export const activate = () => {
   if (active) return;
   active = true;
 
@@ -113,9 +113,9 @@ export function activate() {
   document.addEventListener('click', onClick, true);
   document.addEventListener('keydown', onKeyDown, true);
   document.body.style.cursor = 'crosshair';
-}
+};
 
-export function deactivate() {
+export const deactivate = () => {
   if (!active) return;
   active = false;
 
@@ -133,4 +133,4 @@ export function deactivate() {
     label = null;
   }
   hoveredElement = null;
-}
+};

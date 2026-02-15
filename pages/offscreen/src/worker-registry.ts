@@ -1,4 +1,4 @@
-export interface WorkerInstance {
+interface WorkerInstance {
   extensionId: string;
   artifactId: string;
   status: 'running' | 'stopped' | 'error';
@@ -8,15 +8,19 @@ export interface WorkerInstance {
 
 const workers = new Map<string, WorkerInstance>();
 
-export function getWorker(extensionId: string): WorkerInstance | undefined {
+const getWorker = (extensionId: string): WorkerInstance | undefined => {
   return workers.get(extensionId);
-}
+};
 
-export function getAllWorkers(): Map<string, WorkerInstance> {
+const getAllWorkers = (): Map<string, WorkerInstance> => {
   return workers;
-}
+};
 
-export function createWorkerInstance(extensionId: string, artifactId: string, iframe: HTMLIFrameElement): WorkerInstance {
+const createWorkerInstance = (
+  extensionId: string,
+  artifactId: string,
+  iframe: HTMLIFrameElement,
+): WorkerInstance => {
   const instance: WorkerInstance = {
     extensionId,
     artifactId,
@@ -25,9 +29,9 @@ export function createWorkerInstance(extensionId: string, artifactId: string, if
   };
   workers.set(extensionId, instance);
   return instance;
-}
+};
 
-export function stopWorkerInstance(extensionId: string): boolean {
+const stopWorkerInstance = (extensionId: string): boolean => {
   const instance = workers.get(extensionId);
   if (!instance) return false;
 
@@ -40,9 +44,9 @@ export function stopWorkerInstance(extensionId: string): boolean {
   instance.status = 'stopped';
   workers.delete(extensionId);
   return true;
-}
+};
 
-export function getWorkerStatuses(): Record<string, { status: string; artifactId: string; error?: string }> {
+const getWorkerStatuses = (): Record<string, { status: string; artifactId: string; error?: string }> => {
   const statuses: Record<string, { status: string; artifactId: string; error?: string }> = {};
   for (const [extId, instance] of workers) {
     statuses[extId] = {
@@ -52,4 +56,7 @@ export function getWorkerStatuses(): Record<string, { status: string; artifactId
     };
   }
   return statuses;
-}
+};
+
+export type { WorkerInstance };
+export { getWorker, getAllWorkers, createWorkerInstance, stopWorkerInstance, getWorkerStatuses };

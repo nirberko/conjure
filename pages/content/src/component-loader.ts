@@ -1,7 +1,7 @@
 import { injectArtifact } from './injector.js';
 import type { Artifact } from '@extension/shared';
 
-export async function loadComponentsForPage() {
+export const loadComponentsForPage = async () => {
   const url = window.location.href;
 
   // Load extensions and their artifacts
@@ -14,4 +14,4 @@ export async function loadComponentsForPage() {
       }
     }
   });
-}
+};

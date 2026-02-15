@@ -9,7 +9,7 @@ console.log('[Conjure] Content script loaded');
 loadComponentsForPage();
 
 // DOM inspection helpers
-function serializeDOM(el: Element, depth: number): string {
+const serializeDOM = (el: Element, depth: number): string => {
   if (depth <= 0) return `<${el.tagName.toLowerCase()} .../>`;
   const attrs = Array.from(el.attributes)
     .map(a => `${a.name}="${a.value}"`)
@@ -29,9 +29,9 @@ function serializeDOM(el: Element, depth: number): string {
 
   const remaining = el.children.length > 20 ? `\n<!-- +${el.children.length - 20} more -->` : '';
   return `<${tag}${attrStr}>\n${children}${remaining}\n</${tag}>`;
-}
+};
 
-function getComputedStyleSummary(el: Element): Record<string, string> {
+const getComputedStyleSummary = (el: Element): Record<string, string> => {
   const computed = window.getComputedStyle(el);
   const props = [
     'display',
@@ -60,7 +60,7 @@ function getComputedStyleSummary(el: Element): Record<string, string> {
     if (val) result[prop] = val;
   }
   return result;
-}
+};
 
 // Listen for messages from background worker
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
