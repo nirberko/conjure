@@ -124,7 +124,7 @@ The content script runs on every `http`/`https` page. It does not show UI unless
 ### Project Structure
 
 ```
-signpdf/
+conjure/
 ├── chrome-extension/          # Extension entry point
 │   ├── manifest.ts            # MV3 manifest definition (compiled at build time)
 │   ├── src/background/        # Background service worker (message router, DB, agent, URL matcher, worker manager, offscreen)
@@ -303,7 +303,7 @@ Configure your preferred provider and API key in the **Settings** tab of the sid
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd signpdf
+cd conjure
 
 # Install dependencies
 pnpm install
