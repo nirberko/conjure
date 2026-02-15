@@ -21,7 +21,6 @@
   "dependencies": {
     "@extension/env": "workspace:*",
     "@extension/shared": "workspace:*",
-    "@extension/storage": "workspace:*",
     "webextension-polyfill": "^0.12.0"
   },
   "devDependencies": {
@@ -29,6 +28,7 @@
     "@extension/hmr": "workspace:*",
     "@extension/tsconfig": "workspace:*",
     "@extension/vite-config": "workspace:*",
+    "dexie": "^4.3.0",
     "@laynezh/vite-plugin-lib-assets": "^1.1.0",
     "magic-string": "^0.30.17",
     "ts-loader": "^9.5.2"

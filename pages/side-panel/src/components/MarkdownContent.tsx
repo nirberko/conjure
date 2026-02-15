@@ -14,7 +14,7 @@ const markdownComponents: Components = {
   ol: ({ children }) => <ol className="mb-2 ml-4 list-decimal space-y-0.5 text-slate-400">{children}</ol>,
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  code: ({ _node, className, children, ...rest }) => {
+  code: ({ node, className, children, ...rest }) => {
     const isBlock = className != null;
     if (isBlock) {
       const language = className.replace(/^language-/, '') || 'text';

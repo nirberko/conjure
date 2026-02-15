@@ -199,18 +199,16 @@ const handleWorkerApiCall = async (requestId: string, method: string, args: unkn
       }
       case 'messaging.broadcast': {
         const [extensionId, data] = args as [string, unknown];
-        const tabs = await chrome.tabs.query({});
-        for (const tab of tabs) {
-          if (tab.id) {
-            chrome.tabs
-              .sendMessage(tab.id, {
-                type: 'WORKER_MESSAGE',
-                payload: { extensionId, data },
-              })
-              .catch(() => {});
-          }
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.id) {
+          chrome.tabs
+            .sendMessage(tab.id, {
+              type: 'WORKER_MESSAGE',
+              payload: { extensionId, data },
+            })
+            .catch(() => {});
         }
-        result = { success: true, tabCount: tabs.length };
+        result = { success: true, tabCount: tab ? 1 : 0 };
         break;
       }
       case 'env.get': {

@@ -45,7 +45,6 @@
     "zod": "^3.23.x"
   },
   "devDependencies": {
-    "@extension/storage": "workspace:*",
     "@extension/tsconfig": "workspace:*",
     "@types/uuid": "^11.0.0",
     "type-fest": "^4.41.0"

@@ -1,5 +1,5 @@
 import { runAgent, stopAgent, getAgentStatus } from './agent-runner.js';
-import { getMatchingExtensionArtifacts, setupTabListener } from './url-matcher.js';
+import { getMatchingExtensionArtifacts } from './url-matcher.js';
 import {
   startBackgroundWorker,
   stopBackgroundWorker,
@@ -36,9 +36,6 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(consol
 
 // Run migration on startup
 migrateV1ToV2().catch(err => console.error('[Conjure] Migration error:', err));
-
-// Set up auto-injection on tab navigation
-setupTabListener();
 
 // Auto-start background workers for enabled extensions
 autoStartBackgroundWorkers().catch(err => console.error('[Conjure] Auto-start workers error:', err));
@@ -315,8 +312,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 const mountEl = document.getElementById(mId);
                 if (mountEl) {
-                  const root = ReactDOM.createRoot(mountEl);
-                  root.render(React.createElement(ComponentResult, { context }));
+                  const root = (ReactDOM as { createRoot: (el: HTMLElement) => { render: (el: unknown) => void } }).createRoot(mountEl);
+                  root.render((React as { createElement: (type: unknown, props: unknown) => unknown }).createElement(ComponentResult, { context }));
                 }
                 return;
               } catch (primaryErr: unknown) {
@@ -422,6 +419,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'LOAD_EXTENSIONS': {
         const { url: loadUrl } = message.payload as { url: string };
         const artifacts = await getMatchingExtensionArtifacts(loadUrl);
+        for (const artifact of artifacts) {
+          if (artifact.type === 'background-worker') {
+            dispatchWorkerTrigger(artifact.extensionId, 'url_navigation', {
+              url: loadUrl,
+              tabId: sender.tab?.id,
+              title: sender.tab?.title,
+            });
+          }
+        }
         return { artifacts };
       }
 
