@@ -87,8 +87,6 @@ describe('Artifact CRUD', () => {
       type: 'react-component',
       name: 'Widget',
       code: 'return () => null;',
-      cssSelector: '#root',
-      injectionMode: 'append',
       enabled: true,
     });
 

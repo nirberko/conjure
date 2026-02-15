@@ -1,7 +1,7 @@
 {
-  "name": "webforge",
+  "name": "conjure",
   "version": "0.1.0",
-  "description": "WebForge — AI-Powered Component Injector Chrome Extension",
+  "description": "Conjure — AI-Powered Component Injector Chrome Extension",
   "license": "MIT",
   "private": true,
   "sideEffects": false,

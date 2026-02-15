@@ -12,7 +12,7 @@ class ExtensionDBManager {
   private static KV_SPEC = '&key';
 
   private dbName(extensionId: string): string {
-    return `webforge_ext_${extensionId}`;
+    return `conjure_ext_${extensionId}`;
   }
 
   private async getStoredSchema(extensionId: string): Promise<ExtensionSchema | undefined> {

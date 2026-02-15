@@ -1,4 +1,4 @@
-import { getAgentSystemPrompt, getPlannerSystemPrompt } from './prompts.js';
+import { getAgentSystemPrompt } from './prompts.js';
 import { ExtensionAgentState } from './state.js';
 import { createAgentTools } from './tools/index.js';
 import { getArtifactsByExtension } from '../db/index.js';
@@ -37,7 +37,7 @@ export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
 
       if (requiredIds.size > 0) {
         // This assistant message has dangling tool_calls — skip it and its orphaned tool responses
-        console.log('[WebForge Graph] Removing dangling tool_calls message, missing responses for:', [...requiredIds]);
+        console.log('[Conjure Graph] Removing dangling tool_calls message, missing responses for:', [...requiredIds]);
         continue;
       }
     }
@@ -56,7 +56,7 @@ export function sanitizeMessages(messages: BaseMessage[]): BaseMessage[] {
           return tcs?.some(tc => tc.id === tcId);
         });
         if (!hasParent) {
-          console.log('[WebForge Graph] Removing orphaned tool response:', tcId);
+          console.log('[Conjure Graph] Removing orphaned tool response:', tcId);
           continue;
         }
       }
@@ -72,28 +72,12 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
   const tools = createAgentTools(toolContext);
   const modelWithTools = model.bindTools!(tools);
 
-  // --- Node: Planner (chain-of-thought before each action) ---
-  async function planner(state: typeof ExtensionAgentState.State) {
-    console.log('[WebForge Graph] Planner node entered, iteration:', state.iterationCount);
-    const tabInfo = state.activeTabInfo;
-    const plannerPrompt = getPlannerSystemPrompt(tabInfo?.url, tabInfo?.title, state.plan);
-
-    const cleanMessages = sanitizeMessages(state.messages);
-    console.log('[WebForge Graph] Planner invoking LLM with', cleanMessages.length, 'messages...');
-    const response = await model.invoke([{ role: 'system', content: plannerPrompt }, ...cleanMessages]);
-
-    const planContent = typeof response.content === 'string' ? response.content : '';
-    console.log('[WebForge Graph] Planner response:', planContent.slice(0, 200));
-
-    return { plan: planContent };
-  }
-
   // --- Node: Router / Orchestrator ---
   async function orchestrator(state: typeof ExtensionAgentState.State) {
-    console.log('[WebForge Graph] Orchestrator node entered, iteration:', state.iterationCount);
+    console.log('[Conjure Graph] Orchestrator node entered, iteration:', state.iterationCount);
     const artifacts = await getArtifactsByExtension(state.extensionId);
     const tabInfo = state.activeTabInfo;
-    const systemPrompt = getAgentSystemPrompt(tabInfo?.url, tabInfo?.title, state.plan);
+    const systemPrompt = getAgentSystemPrompt(tabInfo?.url, tabInfo?.title);
 
     const artifactsSummary =
       artifacts.length > 0
@@ -102,7 +86,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
     const cleanMessages = sanitizeMessages(state.messages);
     console.log(
-      '[WebForge Graph] Invoking LLM with',
+      '[Conjure Graph] Invoking LLM with',
       cleanMessages.length,
       'messages (sanitized from',
       state.messages.length,
@@ -113,7 +97,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
       ...cleanMessages,
     ]);
     console.log(
-      '[WebForge Graph] LLM response received, tool_calls:',
+      '[Conjure Graph] LLM response received, tool_calls:',
       'tool_calls' in response ? (response.tool_calls as unknown[])?.length : 0,
     );
 
@@ -126,7 +110,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
   // --- Node: Tool Executor ---
   async function toolExecutor(state: typeof ExtensionAgentState.State) {
-    console.log('[WebForge Graph] Tool executor node entered');
+    console.log('[Conjure Graph] Tool executor node entered');
     const lastMessage = state.messages[state.messages.length - 1];
     const toolCalls = ('tool_calls' in lastMessage ? lastMessage.tool_calls : []) as Array<{
       id: string;
@@ -144,7 +128,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
     for (const toolCall of toolCalls) {
       console.log(
-        '[WebForge Graph] Executing tool:',
+        '[Conjure Graph] Executing tool:',
         toolCall.name,
         'args:',
         JSON.stringify(toolCall.args).slice(0, 200),
@@ -162,7 +146,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
       try {
         const result = await (toolInstance as any).invoke(toolCall.args);
-        console.log('[WebForge Graph] Tool result for', toolCall.name, ':', JSON.stringify(result).slice(0, 300));
+        console.log('[Conjure Graph] Tool result for', toolCall.name, ':', JSON.stringify(result).slice(0, 300));
         results.push({
           role: 'tool' as const,
           content: typeof result === 'string' ? result : JSON.stringify(result),
@@ -170,7 +154,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
           name: toolCall.name,
         });
       } catch (error) {
-        console.error('[WebForge Graph] Tool error for', toolCall.name, ':', error);
+        console.error('[Conjure Graph] Tool error for', toolCall.name, ':', error);
         results.push({
           role: 'tool' as const,
           content: JSON.stringify({ error: String(error) }),
@@ -188,7 +172,7 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
   // --- Conditional Edge: Should Continue? ---
   function shouldContinue(state: typeof ExtensionAgentState.State): 'tool_executor' | typeof END {
-    console.log('[WebForge Graph] shouldContinue check, iteration:', state.iterationCount);
+    console.log('[Conjure Graph] shouldContinue check, iteration:', state.iterationCount);
     const lastMessage = state.messages[state.messages.length - 1];
     const toolCalls = ('tool_calls' in lastMessage ? lastMessage.tool_calls : []) as unknown[];
 
@@ -201,13 +185,11 @@ function createGraph(model: BaseChatModel, toolContext: ToolContext) {
 
   // --- Build Graph ---
   const graph = new StateGraph(ExtensionAgentState)
-    .addNode('planner', planner)
     .addNode('orchestrator', orchestrator)
     .addNode('tool_executor', toolExecutor)
-    .addEdge('__start__', 'planner')
-    .addEdge('planner', 'orchestrator')
+    .addEdge('__start__', 'orchestrator')
     .addConditionalEdges('orchestrator', shouldContinue)
-    .addEdge('tool_executor', 'planner');
+    .addEdge('tool_executor', 'orchestrator');
 
   return graph;
 }

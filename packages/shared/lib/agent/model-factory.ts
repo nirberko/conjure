@@ -18,7 +18,7 @@ const DEFAULT_MODELS: Record<AIProvider, string> = {
 
 export function createChatModel(config: ProviderConfig): BaseChatModel {
   const model = config.model || DEFAULT_MODELS[config.provider];
-  console.log('[WebForge Model] Creating model:', config.provider, model);
+  console.log('[Conjure Model] Creating model:', config.provider, model);
 
   switch (config.provider) {
     case 'openai':

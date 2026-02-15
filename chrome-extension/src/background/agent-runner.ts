@@ -18,9 +18,21 @@ const activeRuns = new Map<string, AbortController>();
 const checkpointer = new DexieCheckpointSaver();
 
 function sendStreamEvent(event: AgentStreamEvent) {
-  console.log('[WebForge Agent] Stream event:', event.type, event.data);
+  console.log('[Conjure Agent] Stream event:', event.type, event.data);
   chrome.runtime.sendMessage({ type: 'AGENT_STREAM_EVENT', payload: event }).catch(err => {
-    console.warn('[WebForge Agent] Failed to send stream event:', err.message);
+    console.warn('[Conjure Agent] Failed to send stream event:', err.message);
+  });
+}
+
+function sendMessageToTab(tabId: number, message: unknown): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, message, response => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+      } else {
+        resolve(response);
+      }
+    });
   });
 }
 
@@ -28,16 +40,29 @@ function createToolContext(config: AgentRunConfig): ToolContext {
   return {
     extensionId: config.extensionId,
     tabId: config.tabInfo?.tabId,
-    sendToContentScript: (tabId: number, message: unknown) =>
-      new Promise((resolve, reject) => {
-        chrome.tabs.sendMessage(tabId, message, response => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(response);
-          }
-        });
-      }),
+    sendToContentScript: async (tabId: number, message: unknown) => {
+      try {
+        return await sendMessageToTab(tabId, message);
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        if (!errorMsg.includes('Receiving end does not exist')) {
+          throw error;
+        }
+
+        // Content script not loaded — inject it programmatically and retry
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            files: ['content/all.iife.js'],
+          });
+        } catch {
+          throw error; // Injection failed (restricted page) — surface original error
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+        return await sendMessageToTab(tabId, message);
+      }
+    },
     waitForMessage: (messageType: string, timeoutMs = 30000) =>
       new Promise((resolve, reject) => {
         let settled = false;
@@ -80,7 +105,7 @@ function createToolContext(config: AgentRunConfig): ToolContext {
 }
 
 export async function runAgent(config: AgentRunConfig, userMessage: string): Promise<void> {
-  console.log('[WebForge Agent] runAgent called:', {
+  console.log('[Conjure Agent] runAgent called:', {
     provider: config.provider,
     model: config.model,
     extensionId: config.extensionId,
@@ -88,7 +113,7 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
 
   const existing = activeRuns.get(config.extensionId);
   if (existing) {
-    console.log('[WebForge Agent] Aborting existing run for', config.extensionId);
+    console.log('[Conjure Agent] Aborting existing run for', config.extensionId);
     existing.abort();
   }
 
@@ -96,19 +121,19 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
   activeRuns.set(config.extensionId, abortController);
 
   try {
-    console.log('[WebForge Agent] Creating chat model...');
+    console.log('[Conjure Agent] Creating chat model...');
     const model = createChatModel({
       provider: config.provider,
       apiKey: config.apiKey,
       model: config.model,
     });
-    console.log('[WebForge Agent] Model created');
+    console.log('[Conjure Agent] Model created');
 
     const toolContext = createToolContext(config);
     const graph = buildAgentGraph(model, toolContext);
-    console.log('[WebForge Agent] Graph built, compiling...');
+    console.log('[Conjure Agent] Graph built, compiling...');
     const compiledGraph = graph.compile({ checkpointer });
-    console.log('[WebForge Agent] Graph compiled');
+    console.log('[Conjure Agent] Graph compiled');
 
     const threadConfig = {
       configurable: {
@@ -117,16 +142,8 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
       },
     };
 
-    // Emit initial thinking start (planner is the first node)
-    let thinkingStartTime = Date.now();
-    sendStreamEvent({
-      type: 'thinking',
-      data: { thinkingStatus: 'start' },
-      timestamp: Date.now(),
-    });
-
     const recursionLimit = (await getSetting<number>('agent_recursion_limit')) ?? 50;
-    console.log('[WebForge Agent] Starting stream (recursionLimit:', recursionLimit, ')...');
+    console.log('[Conjure Agent] Starting stream (recursionLimit:', recursionLimit, ')...');
     const stream = await compiledGraph.stream(
       {
         messages: [createUserMessage(userMessage)],
@@ -140,39 +157,17 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
         recursionLimit,
       },
     );
-    console.log('[WebForge Agent] Stream started, iterating events...');
+    console.log('[Conjure Agent] Stream started, iterating events...');
 
     let hasUnresolvedToolCall = false;
     let lastToolCallName = '';
 
     for await (const event of stream) {
-      console.log('[WebForge Agent] Stream event received:', JSON.stringify(event).slice(0, 500));
+      console.log('[Conjure Agent] Stream event received:', JSON.stringify(event).slice(0, 500));
       if (abortController.signal.aborted) break;
 
       for (const [nodeName, output] of Object.entries(event)) {
         const nodeOutput = output as Record<string, unknown>;
-
-        // Handle planner node output — emit thinking done
-        if (nodeName === 'planner') {
-          const planContent = (nodeOutput.plan as string) ?? '';
-          const durationMs = Date.now() - thinkingStartTime;
-          sendStreamEvent({
-            type: 'thinking',
-            data: { thinkingStatus: 'done', content: planContent, durationMs },
-            timestamp: Date.now(),
-          });
-          continue;
-        }
-
-        // After tool_executor output, planner runs next — emit thinking start
-        if (nodeName === 'tool_executor') {
-          thinkingStartTime = Date.now();
-          sendStreamEvent({
-            type: 'thinking',
-            data: { thinkingStatus: 'start' },
-            timestamp: Date.now(),
-          });
-        }
 
         const messages = (nodeOutput.messages ?? []) as Array<Record<string, unknown>>;
 
@@ -221,7 +216,7 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
     // If the stream ended with an unresolved tool call (e.g. recursion limit hit),
     // emit a response so the UI doesn't show a permanently pending tool call.
     if (hasUnresolvedToolCall) {
-      console.warn('[WebForge Agent] Stream ended with unresolved tool call:', lastToolCallName);
+      console.warn('[Conjure Agent] Stream ended with unresolved tool call:', lastToolCallName);
       sendStreamEvent({
         type: 'response',
         data: {
@@ -238,7 +233,7 @@ export async function runAgent(config: AgentRunConfig, userMessage: string): Pro
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error('[WebForge Agent] Error:', error);
+    console.error('[Conjure Agent] Error:', error);
     if (abortController.signal.aborted) return;
 
     const errorMessage = error instanceof Error ? error.message : String(error);

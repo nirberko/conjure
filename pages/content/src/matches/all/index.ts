@@ -3,7 +3,7 @@ import { activate as activatePicker } from '../../element-picker.js';
 import { injectArtifact, removeArtifact, isArtifactInjected } from '../../injector.js';
 import type { Artifact } from '@extension/shared';
 
-console.log('[WebForge] Content script loaded');
+console.log('[Conjure] Content script loaded');
 
 // Auto-load extensions for current page
 loadComponentsForPage();
@@ -154,7 +154,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       // Dispatch a custom event so injected React components can listen to
       // messages from background workers
       window.dispatchEvent(
-        new CustomEvent('webforge-worker-message', {
+        new CustomEvent('conjure-worker-message', {
           detail: message.payload,
         }),
       );

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { ThinkingData } from '../hooks/useAgentChat';
+import { CodeBlock } from './CodeBlock';
 
 interface ThinkingBlockProps {
   thinking: ThinkingData;
@@ -24,11 +25,7 @@ export function ThinkingBlock({ thinking }: ThinkingBlockProps) {
           expand_more
         </span>
       </button>
-      {expanded && (
-        <div className="code-block overflow-x-auto rounded-md p-4 font-mono text-xs leading-6">
-          <pre className="whitespace-pre-wrap text-slate-400">{thinking.content}</pre>
-        </div>
-      )}
+      {expanded && <CodeBlock code={thinking.content} language="text" />}
     </div>
   );
 }

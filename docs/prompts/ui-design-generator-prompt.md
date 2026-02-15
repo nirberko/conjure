@@ -1,12 +1,12 @@
-# UI Design Generator Prompt — WebForge Chrome Extension
+# UI Design Generator Prompt — Conjure Chrome Extension
 
-Copy the prompt below into a UI design generator (e.g. v0, Galileo, Figma AI, or similar) to generate screens for the WebForge Chrome extension.
+Copy the prompt below into a UI design generator (e.g. v0, Galileo, Figma AI, or similar) to generate screens for the Conjure Chrome extension.
 
 ---
 
 ## Full product prompt (paste this)
 
-**Product:** WebForge — a Chrome extension that lets users inject custom React components, JavaScript, and CSS into any website using AI. Users create “extensions” scoped to URL patterns; each extension has artifacts (components, scripts, styles, or background workers) that the AI agent generates, deploys, and verifies via chat.
+**Product:** Conjure — a Chrome extension that lets users inject custom React components, JavaScript, and CSS into any website using AI. Users create “extensions” scoped to URL patterns; each extension has artifacts (components, scripts, styles, or background workers) that the AI agent generates, deploys, and verifies via chat.
 
 **Design direction:** Dark, developer-friendly UI. Dark gray background (#111827 / gray-900), white and light gray text, blue as primary accent (#2563eb / blue-600 for buttons and active states). Clean, minimal, no decorative imagery. Dense but readable; think IDE or DevTools panel, not marketing site.
 
@@ -14,11 +14,11 @@ Copy the prompt below into a UI design generator (e.g. v0, Galileo, Figma AI, or
 
 1. **Popup (small, ~200×120px)**  
    - Appears when the user clicks the extension icon in the toolbar.  
-   - Centered content: app name “WebForge” (bold, white), single primary button “Open Side Panel” (blue, rounded).  
+   - Centered content: app name “Conjure” (bold, white), single primary button “Open Side Panel” (blue, rounded).  
    - Dark background, compact vertical layout.
 
 2. **Side panel — main view (narrow panel, ~320–400px wide, full height)**  
-   - **Header:** “WebForge” title, no nav in header.  
+   - **Header:** “Conjure” title, no nav in header.  
    - **Tabs:** Two horizontal tabs — “Extensions” (default) and “Settings”. Active tab has blue underline and blue text; inactive gray.  
    - **Extensions tab content:**  
      - “New Extension” button: dashed border, plus icon, gray text, full width.  
@@ -51,10 +51,10 @@ Generate [one screen / all screens / a single combined mockup] in a modern, dark
 
 ## Short variant (for character-limited tools)
 
-**WebForge Chrome extension UI — dark theme (gray-900 bg, blue accents).**
+**Conjure Chrome extension UI — dark theme (gray-900 bg, blue accents).**
 
-1. **Popup:** Centered “WebForge” title + “Open Side Panel” button; dark, compact.  
-2. **Side panel — Extensions:** Header “WebForge”, tabs Extensions | Settings. Extensions: “New Extension” dashed button, then cards (name, URL pattern, toggle, delete).  
+1. **Popup:** Centered “Conjure” title + “Open Side Panel” button; dark, compact.  
+2. **Side panel — Extensions:** Header “Conjure”, tabs Extensions | Settings. Extensions: “New Extension” dashed button, then cards (name, URL pattern, toggle, delete).  
 3. **Side panel — Settings:** AI provider dropdown, API key inputs, model dropdown, Save button.  
 4. **Side panel — Extension detail:** Back + name + URL; sub-tabs Chat | Artifacts. Chat: user (blue) / assistant (gray) bubbles, tool-call blocks, input + Send. Artifacts: cards with type badge, name, Deploy/Remove; workers have Start/Stop/Reload and status.
 
@@ -64,9 +64,9 @@ Style: developer/IDE-like, minimal, no decoration, narrow column (~360px), good 
 
 ## Per-screen prompts (for one screen at a time)
 
-**Popup:** Small Chrome extension popup, dark gray background. Centered: “WebForge” heading and one blue “Open Side Panel” button. Minimal, ~200×120px.
+**Popup:** Small Chrome extension popup, dark gray background. Centered: “Conjure” heading and one blue “Open Side Panel” button. Minimal, ~200×120px.
 
-**Side panel — Extensions list:** Chrome side panel, dark theme. Header “WebForge”. Two tabs: Extensions (active, blue underline), Settings. Body: “New Extension” button with dashed border and plus icon; below, list of cards — each with title, monospace URL pattern, enable toggle, delete icon. Narrow column layout.
+**Side panel — Extensions list:** Chrome side panel, dark theme. Header “Conjure”. Two tabs: Extensions (active, blue underline), Settings. Body: “New Extension” button with dashed border and plus icon; below, list of cards — each with title, monospace URL pattern, enable toggle, delete icon. Narrow column layout.
 
 **Side panel — Settings:** Same panel, Settings tab active. Form: AI Provider (OpenAI / Anthropic / Google), API key field(s), Model dropdown, blue Save button. Dark inputs, clear labels.
 

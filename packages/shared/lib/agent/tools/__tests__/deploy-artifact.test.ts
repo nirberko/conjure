@@ -23,7 +23,7 @@ describe('deploy_artifact tool', () => {
       extensionId: ctx.extensionId,
       type: 'background-worker',
       name: 'TestWorker',
-      code: 'webforge.log("started");',
+      code: 'conjure.log("started");',
       enabled: true,
     });
 
@@ -46,8 +46,6 @@ describe('deploy_artifact tool', () => {
       type: 'react-component',
       name: 'TestComponent',
       code: 'function C() { return <div/>; }\nreturn C;',
-      cssSelector: 'body',
-      injectionMode: 'append',
       enabled: true,
     });
 
@@ -89,7 +87,7 @@ describe('deploy_artifact tool', () => {
       extensionId: ctx.extensionId,
       type: 'background-worker',
       name: 'FailWorker',
-      code: 'webforge.log("fail");',
+      code: 'conjure.log("fail");',
       enabled: true,
     });
 

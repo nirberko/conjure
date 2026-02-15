@@ -5,13 +5,12 @@ import type { ToolContext } from '../types.js';
 
 export function createGenerateJsTool(ctx: ToolContext) {
   return tool(
-    async ({ name, description, code, targetSelector }) => {
+    async ({ name, description, code }) => {
       const artifact = await createArtifact({
         extensionId: ctx.extensionId,
         type: 'js-script',
         name,
         code,
-        cssSelector: targetSelector,
         enabled: true,
       });
       return JSON.stringify({
@@ -28,7 +27,6 @@ export function createGenerateJsTool(ctx: ToolContext) {
         name: z.string().describe('Script name (e.g. "AutoScroller")'),
         description: z.string().describe('Brief description of what the script does'),
         code: z.string().describe('The JavaScript code to execute'),
-        targetSelector: z.string().optional().describe('Optional CSS selector the script targets'),
       }),
     },
   );

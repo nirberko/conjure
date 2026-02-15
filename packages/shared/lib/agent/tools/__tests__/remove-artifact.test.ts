@@ -13,8 +13,6 @@ describe('remove_artifact tool', () => {
       type: 'react-component',
       name: 'Widget',
       code: 'return () => null;',
-      cssSelector: 'body',
-      injectionMode: 'append',
       enabled: true,
     });
 

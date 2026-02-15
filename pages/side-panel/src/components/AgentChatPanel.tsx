@@ -1,6 +1,8 @@
 import { AgentThinking } from './AgentThinking';
+import { CodeBlock } from './CodeBlock';
 import { MarkdownContent } from './MarkdownContent';
 import { ThinkingBlock } from './ThinkingBlock';
+import { UserInputForm } from './UserInputForm';
 import { useAgentChat } from '../hooks/useAgentChat';
 import { useState, useRef, useEffect } from 'react';
 import type { AgentMessage, ToolCallDisplay } from '../hooks/useAgentChat';
@@ -74,29 +76,17 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
       {expanded && (
         <>
           {/* Code block with args */}
-          <div className="code-block overflow-x-auto rounded-md p-4 font-mono text-xs leading-6">
-            {Object.entries(toolCall.args).length > 0 ? (
-              JSON.stringify(toolCall.args, null, 2)
-                .split('\n')
-                .map((line, i) => (
-                  <div key={i} className="flex gap-4">
-                    <span className="w-4 select-none text-right text-slate-700">{i + 1}</span>
-                    <span className="text-slate-400">{line}</span>
-                  </div>
-                ))
-            ) : (
-              <div className="flex gap-4">
-                <span className="w-4 select-none text-right text-slate-700">1</span>
-                <span className="italic text-slate-500">No arguments</span>
-              </div>
-            )}
-          </div>
+          {Object.entries(toolCall.args).length > 0 ? (
+            <CodeBlock code={JSON.stringify(toolCall.args, null, 2)} language="json" />
+          ) : (
+            <CodeBlock code="No arguments" language="text" showLineNumbers={false} />
+          )}
 
           {/* Result */}
           {toolCall.result && (
-            <div className="code-block max-h-32 overflow-x-auto overflow-y-auto rounded-md p-3 font-mono text-[10px] leading-5">
+            <div>
               <div className="mb-1 text-[9px] uppercase tracking-wider text-slate-600">Result</div>
-              <pre className="whitespace-pre-wrap text-slate-400">{formatResult(toolCall.result)}</pre>
+              <CodeBlock code={formatResult(toolCall.result)} language="json" maxHeight="8rem" />
             </div>
           )}
         </>
@@ -106,7 +96,7 @@ function ToolCallBlock({ toolCall }: { toolCall: ToolCallDisplay }) {
 }
 
 // Relative to side-panel page URL so it works in extension and dev
-const WEBFORGE_LOGO_URL = 'logo_vertical_dark.svg';
+const CONJURE_LOGO_URL = 'logo_vertical_dark.svg';
 
 function MessageBubble({ message }: { message: AgentMessage }) {
   if (message.role === 'user') {
@@ -133,17 +123,17 @@ function MessageBubble({ message }: { message: AgentMessage }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Header: icon + WebForge name on one row */}
+      {/* Header: icon + Conjure name on one row */}
       <div className="flex items-center gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-700/80">
           <img
-            src={WEBFORGE_LOGO_URL}
-            alt="WebForge"
+            src={CONJURE_LOGO_URL}
+            alt="Conjure"
             className="h-5 w-5 object-contain"
           />
         </div>
         <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500">
-          WebForge
+          Conjure
         </div>
       </div>
       {/* Tools and response on the line below, fixed to the left */}
@@ -188,7 +178,7 @@ function MessageBubble({ message }: { message: AgentMessage }) {
 }
 
 export function AgentChatPanel({ extensionId }: AgentChatPanelProps) {
-  const { messages, isRunning, isLoading, activeThinking, sendMessage, stopAgent, clearChat } =
+  const { messages, isRunning, isLoading, activeThinking, pendingInputRequest, sendMessage, stopAgent, clearChat, submitUserInput, cancelUserInput } =
     useAgentChat(extensionId);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -242,31 +232,41 @@ export function AgentChatPanel({ extensionId }: AgentChatPanelProps) {
 
       {/* Input */}
       <footer className="bg-background-dark border-terminal-border border-t px-6 py-4">
-        <form onSubmit={handleSubmit}>
-          <div className="relative flex items-center">
-            <div className="pointer-events-none absolute left-0 flex items-center">
-              <span className="font-mono text-sm text-slate-600">&#x2318;</span>
+        {pendingInputRequest ? (
+          <UserInputForm
+            fields={pendingInputRequest.fields}
+            title={pendingInputRequest.title}
+            submitLabel={pendingInputRequest.submitLabel}
+            onSubmit={submitUserInput}
+            onCancel={cancelUserInput}
+          />
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="relative flex items-center">
+              <div className="pointer-events-none absolute left-0 flex items-center">
+                <span className="font-mono text-sm text-slate-600">&#x2318;</span>
+              </div>
+              <input
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask or command..."
+                className="font-display w-full border-none bg-transparent py-2 pl-6 pr-24 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:outline-none focus:ring-0"
+                disabled={isRunning}
+              />
+              <div className="absolute right-0 flex items-center gap-3">
+                <span className="hidden font-mono text-[10px] text-slate-700 sm:inline">GPT-4O_EXT</span>
+                <button
+                  type="submit"
+                  disabled={isRunning || !input.trim()}
+                  className="hover:text-primary text-slate-600 transition-colors disabled:opacity-30">
+                  <span className="material-symbols-outlined text-lg">north_east</span>
+                </button>
+              </div>
             </div>
-            <input
-              type="text"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask or command..."
-              className="font-display w-full border-none bg-transparent py-2 pl-6 pr-24 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:outline-none focus:ring-0"
-              disabled={isRunning}
-            />
-            <div className="absolute right-0 flex items-center gap-3">
-              <span className="hidden font-mono text-[10px] text-slate-700 sm:inline">GPT-4O_EXT</span>
-              <button
-                type="submit"
-                disabled={isRunning || !input.trim()}
-                className="hover:text-primary text-slate-600 transition-colors disabled:opacity-30">
-                <span className="material-symbols-outlined text-lg">north_east</span>
-              </button>
-            </div>
-          </div>
-        </form>
+          </form>
+        )}
         <div className="via-terminal-border mt-1 h-[1px] w-full bg-gradient-to-r from-transparent to-transparent opacity-50" />
       </footer>
     </div>

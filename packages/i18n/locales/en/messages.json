@@ -5,10 +5,10 @@
   },
   "extensionName": {
     "description": "Extension name",
-    "message": "WebForge"
+    "message": "Conjure"
   },
   "openSidePanel": {
-    "message": "Open WebForge"
+    "message": "Open Conjure"
   },
   "displayErrorInfo": {
     "message": "Error occur"

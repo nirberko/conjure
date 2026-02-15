@@ -1,7 +1,7 @@
 import type { AIGenerationContext } from './types.js';
 
 export function getSystemPrompt(context?: AIGenerationContext): string {
-  const base = `You are WebForge, an AI that generates self-contained React components to be injected into web pages.
+  const base = `You are Conjure, an AI that generates self-contained React components to be injected into web pages.
 
 ## Rules
 1. Generate a single React component using JSX

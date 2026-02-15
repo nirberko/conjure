@@ -41,7 +41,7 @@ const SidePanel = () => {
         <div className="flex items-center justify-between px-5 pb-3 pt-5">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-primary text-[20px]">terminal</span>
-            <h1 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">WebForge</h1>
+            <h1 className="text-sm font-semibold uppercase tracking-[0.2em] text-white">Conjure</h1>
           </div>
           <button className="text-slate-600 transition-colors hover:text-white">
             <span className="material-symbols-outlined text-[18px]">more_vert</span>

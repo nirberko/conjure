@@ -1,4 +1,5 @@
 import { ArtifactCard } from './ArtifactCard';
+import { WorkerDetail } from './WorkerDetail';
 import { useState, useEffect, useCallback } from 'react';
 import type { WorkerStatus } from './ArtifactCard';
 import type { Artifact } from '@extension/shared';
@@ -11,6 +12,7 @@ export function ArtifactList({ extensionId }: ArtifactListProps) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [workerStatuses, setWorkerStatuses] = useState<Record<string, WorkerStatus>>({});
   const [loading, setLoading] = useState(true);
+  const [activeWorkerArtifact, setActiveWorkerArtifact] = useState<Artifact | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -46,6 +48,22 @@ export function ArtifactList({ extensionId }: ArtifactListProps) {
     setTimeout(refresh, 500);
   };
 
+  if (activeWorkerArtifact) {
+    return (
+      <WorkerDetail
+        artifact={activeWorkerArtifact}
+        workerStatus={workerStatuses[activeWorkerArtifact.extensionId]}
+        onBack={() => setActiveWorkerArtifact(null)}
+        onStartWorker={async (art) => {
+          await handleStartWorker(art);
+        }}
+        onStopWorker={async (extId) => {
+          await handleStopWorker(extId);
+        }}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className="p-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
@@ -73,6 +91,7 @@ export function ArtifactList({ extensionId }: ArtifactListProps) {
                 workerStatus={workerStatuses[artifact.extensionId]}
                 onStartWorker={handleStartWorker}
                 onStopWorker={handleStopWorker}
+                onViewWorker={artifact.type === 'background-worker' ? setActiveWorkerArtifact : undefined}
               />
             ))}
           </div>

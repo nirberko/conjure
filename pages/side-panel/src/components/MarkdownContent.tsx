@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
+import { CodeBlock } from './CodeBlock';
 
 const markdownComponents: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -15,12 +16,9 @@ const markdownComponents: Components = {
   code: ({ node, className, children, ...rest }) => {
     const isBlock = className != null;
     if (isBlock) {
+      const language = className.replace(/^language-/, '') || 'text';
       return (
-        <code
-          className="block overflow-x-auto rounded bg-slate-800/80 px-3 py-2 font-mono text-[11px] text-slate-300"
-          {...rest}>
-          {children}
-        </code>
+        <CodeBlock code={String(children).replace(/\n$/, '')} language={language} className="mb-2" />
       );
     }
     return (
@@ -29,7 +27,7 @@ const markdownComponents: Components = {
       </code>
     );
   },
-  pre: ({ children }) => <pre className="mb-2 overflow-x-auto rounded-md">{children}</pre>,
+  pre: ({ children }) => <>{children}</>,
   blockquote: ({ children }) => (
     <blockquote className="border-primary/50 border-l-2 pl-3 text-slate-500">{children}</blockquote>
   ),

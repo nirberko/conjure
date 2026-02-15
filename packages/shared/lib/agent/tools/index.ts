@@ -8,11 +8,14 @@ import { createInspectDomTool } from './inspect-dom.js';
 import { createInspectStylesTool, createReadPageTextTool } from './inspect-styles.js';
 import { createPickElementTool } from './pick-element.js';
 import { createRemoveArtifactTool } from './remove-artifact.js';
+import { createRequestUserInputTool, REQUEST_USER_INPUT_TOOL_NAME } from './request-user-input.js';
+import { createThinkTool } from './think.js';
 import { createVerifyDeploymentTool } from './verify-deployment.js';
 import type { ToolContext } from '../types.js';
 
 export function createAgentTools(ctx: ToolContext) {
   return [
+    createThinkTool(),
     createGenerateReactTool(ctx),
     createGenerateJsTool(ctx),
     createGenerateCssTool(ctx),
@@ -25,6 +28,7 @@ export function createAgentTools(ctx: ToolContext) {
     createVerifyDeploymentTool(ctx),
     createPickElementTool(ctx),
     createRemoveArtifactTool(ctx),
+    createRequestUserInputTool(ctx),
   ];
 }
 
@@ -41,4 +45,7 @@ export {
   createVerifyDeploymentTool,
   createPickElementTool,
   createRemoveArtifactTool,
+  createRequestUserInputTool,
+  createThinkTool,
+  REQUEST_USER_INPUT_TOOL_NAME,
 };

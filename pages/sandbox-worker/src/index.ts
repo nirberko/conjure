@@ -96,7 +96,7 @@ function cleanup() {
 }
 
 // ---------------------------------------------------------------------------
-// Webforge shim (equivalent to the old worker-shim.ts)
+// Conjure shim (equivalent to the old worker-shim.ts)
 // ---------------------------------------------------------------------------
 
 function createShim(extensionId: string, artifactId: string) {
@@ -141,6 +141,18 @@ function createShim(extensionId: string, artifactId: string) {
       },
       getAll() {
         return callApi('storage.getAll', [extensionId]);
+      },
+    },
+
+    env: {
+      get(key: string) {
+        return callApi('env.get', [extensionId, key]);
+      },
+      getAll() {
+        return callApi('env.getAll', [extensionId]);
+      },
+      set(key: string, value: string) {
+        return callApi('env.set', [extensionId, key, value]);
       },
     },
 
@@ -213,7 +225,7 @@ function createShim(extensionId: string, artifactId: string) {
     },
 
     log(...args: unknown[]) {
-      console.log(`[WebForge Worker:${extensionId}]`, ...args);
+      console.log(`[Conjure Worker:${extensionId}]`, ...args);
       sendToParent({
         type: 'WORKER_LOG',
         extensionId,
@@ -223,7 +235,7 @@ function createShim(extensionId: string, artifactId: string) {
     },
 
     error(...args: unknown[]) {
-      console.error(`[WebForge Worker:${extensionId}]`, ...args);
+      console.error(`[Conjure Worker:${extensionId}]`, ...args);
       sendToParent({
         type: 'WORKER_LOG',
         extensionId,
@@ -254,7 +266,7 @@ window.addEventListener('message', (event: MessageEvent<InboundMessage>) => {
       currentArtifactId = msg.artifactId;
       const shim = createShim(msg.extensionId, msg.artifactId);
       try {
-        const workerFn = new Function('webforge', msg.code);
+        const workerFn = new Function('conjure', msg.code);
         workerFn(shim);
         sendToParent({ type: 'EXEC_RESULT', success: true });
       } catch (err) {
@@ -270,7 +282,7 @@ window.addEventListener('message', (event: MessageEvent<InboundMessage>) => {
         try {
           handler(msg.data);
         } catch (err) {
-          console.error(`[WebForge Sandbox] Trigger handler error (${msg.trigger}):`, err);
+          console.error(`[Conjure Sandbox] Trigger handler error (${msg.trigger}):`, err);
         }
       }
       break;
@@ -295,4 +307,4 @@ window.addEventListener('message', (event: MessageEvent<InboundMessage>) => {
   }
 });
 
-console.log('[WebForge Sandbox Worker] Runtime loaded');
+console.log('[Conjure Sandbox Worker] Runtime loaded');

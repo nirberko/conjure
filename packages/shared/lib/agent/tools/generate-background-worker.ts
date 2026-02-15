@@ -22,14 +22,14 @@ export function createGenerateBackgroundWorkerTool(ctx: ToolContext) {
     {
       name: 'generate_background_worker',
       description:
-        'Generate a new background worker artifact. Background workers run headlessly in the browser, reacting to triggers (URL navigation, messages, storage changes) and communicating with content scripts. The code receives a `webforge` API object.',
+        'Generate a new background worker artifact. Code receives a `conjure` object. Register handlers with conjure.on(event, handler). Events: url_navigation ({url,tabId,title}), message (data), storage_change ({componentId,pageUrl,data}). APIs: conjure.storage.get/set/getAll, conjure.tabs.query/sendMessage, conjure.messaging.sendToContentScript/broadcast, conjure.db.* (createTables, put, get, getAll, update, delete, where, count, clear), conjure.log/error, conjure.setTimeout/setInterval. Do NOT use import/require.',
       schema: z.object({
         name: z.string().describe('Worker name (e.g. "PageTracker", "AutoNotifier")'),
         description: z.string().describe('Brief description of what the worker does'),
         code: z
           .string()
           .describe(
-            'The JavaScript code for the worker. It receives a `webforge` object with: webforge.on(event, handler), webforge.storage, webforge.tabs, webforge.messaging, webforge.log(), webforge.error()',
+            'Worker code. Receives `conjure` object. Register event handlers with conjure.on(). Use conjure.setTimeout (NOT window.setTimeout). No imports.',
           ),
       }),
     },

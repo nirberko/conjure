@@ -10,7 +10,6 @@ function makeCheckpoint(id: string): Checkpoint {
     channel_values: {},
     channel_versions: {},
     versions_seen: {},
-    pending_sends: [],
   };
 }
 
@@ -18,7 +17,6 @@ function makeMetadata(): CheckpointMetadata {
   return {
     source: 'input',
     step: 0,
-    writes: {},
     parents: {},
   };
 }

@@ -1,6 +1,6 @@
 import type { Artifact } from '@extension/shared';
 
-const injectedArtifacts = new Map<string, { element: HTMLElement; cleanup: () => void }>();
+const injectedArtifacts = new Map<string, { elements: HTMLElement[]; cleanup: () => void }>();
 const pendingInjections = new Set<string>();
 let runtimePromise: Promise<void> | null = null;
 
@@ -9,6 +9,22 @@ async function injectReactRuntime(): Promise<void> {
     runtimePromise = chrome.runtime.sendMessage({ type: 'INJECT_REACT_RUNTIME' });
   }
   await runtimePromise;
+}
+
+function evaluateXPath(xpath: string): Element[] {
+  const result = document.evaluate(
+    xpath,
+    document,
+    null,
+    XPathResult.ORDERED_NODE_SNAPSHOT_TYPE,
+    null,
+  );
+  const elements: Element[] = [];
+  for (let i = 0; i < result.snapshotLength; i++) {
+    const node = result.snapshotItem(i);
+    if (node instanceof Element) elements.push(node);
+  }
+  return elements;
 }
 
 // --- Artifact Injection System ---
@@ -33,40 +49,31 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
   pendingInjections.add(artifact.id);
 
   try {
-    if (!artifact.cssSelector) {
-      return { success: false, error: 'React component requires a cssSelector' };
-    }
-
-    const targetEl = document.querySelector(artifact.cssSelector);
-    if (!targetEl) {
-      return { success: false, error: `Target element not found: ${artifact.cssSelector}` };
-    }
-
     await injectReactRuntime();
 
-    const host = document.createElement('webforge-component');
-    host.dataset.artifactId = artifact.id;
-    host.style.cssText = 'display:block;';
+    // Determine target elements: XPath expression or document.body
+    const targets = artifact.elementXPath
+      ? evaluateXPath(artifact.elementXPath)
+      : [document.body];
 
-    const mountId = `webforge-mount-${artifact.id}`;
-    const mount = document.createElement('div');
-    mount.id = mountId;
-    host.appendChild(mount);
+    if (artifact.elementXPath && targets.length === 0) {
+      return { success: false, error: `No elements found for XPath: ${artifact.elementXPath}` };
+    }
 
-    const mode = artifact.injectionMode ?? 'append';
-    switch (mode) {
-      case 'append':
-        targetEl.appendChild(host);
-        break;
-      case 'prepend':
-        targetEl.prepend(host);
-        break;
-      case 'after':
-        targetEl.after(host);
-        break;
-      case 'before':
-        targetEl.before(host);
-        break;
+    const hosts: HTMLElement[] = [];
+
+    for (let i = 0; i < targets.length; i++) {
+      const host = document.createElement('conjure-component');
+      host.dataset.artifactId = artifact.id;
+      host.style.cssText = 'display:block;';
+
+      const mountId = `conjure-mount-${artifact.id}-${i}`;
+      const mount = document.createElement('div');
+      mount.id = mountId;
+      host.appendChild(mount);
+
+      targets[i].appendChild(host);
+      hosts.push(host);
     }
 
     const sendWorkerMessageHandler = (e: Event) => {
@@ -119,7 +126,7 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
           break;
         default:
           window.dispatchEvent(
-            new CustomEvent(`webforge-ext-db-${requestId}`, {
+            new CustomEvent(`conjure-ext-db-${requestId}`, {
               detail: { error: `Unknown db action: ${action}` },
             }),
           );
@@ -128,7 +135,7 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
 
       chrome.runtime.sendMessage({ type: messageType, payload: messagePayload }, response => {
         window.dispatchEvent(
-          new CustomEvent(`webforge-ext-db-${requestId}`, {
+          new CustomEvent(`conjure-ext-db-${requestId}`, {
             detail: {
               result: response?.result ?? response?.schema ?? response?.data ?? response,
               error: response?.error,
@@ -138,20 +145,24 @@ async function injectReactArtifact(artifact: Artifact): Promise<{ success: boole
       });
     };
 
-    window.addEventListener('webforge-send-worker-message', sendWorkerMessageHandler);
-    window.addEventListener('webforge-ext-db', extDbHandler);
+    window.addEventListener('conjure-send-worker-message', sendWorkerMessageHandler);
+    window.addEventListener('conjure-ext-db', extDbHandler);
 
-    await chrome.runtime.sendMessage({
-      type: 'EXECUTE_IN_PAGE',
-      payload: { code: artifact.code, mountId, componentId: artifact.id, extensionId: artifact.extensionId },
-    });
+    // Execute component code for each mount point
+    for (let i = 0; i < hosts.length; i++) {
+      const mountId = `conjure-mount-${artifact.id}-${i}`;
+      await chrome.runtime.sendMessage({
+        type: 'EXECUTE_IN_PAGE',
+        payload: { code: artifact.code, mountId, componentId: artifact.id, extensionId: artifact.extensionId },
+      });
+    }
 
     const cleanup = () => {
-      window.removeEventListener('webforge-send-worker-message', sendWorkerMessageHandler);
-      window.removeEventListener('webforge-ext-db', extDbHandler);
+      window.removeEventListener('conjure-send-worker-message', sendWorkerMessageHandler);
+      window.removeEventListener('conjure-ext-db', extDbHandler);
     };
 
-    injectedArtifacts.set(artifact.id, { element: host, cleanup });
+    injectedArtifacts.set(artifact.id, { elements: hosts, cleanup });
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -172,7 +183,7 @@ async function injectScript(artifact: Artifact): Promise<{ success: boolean; err
     (document.head || document.documentElement).appendChild(script);
 
     const cleanup = () => {};
-    injectedArtifacts.set(artifact.id, { element: script, cleanup });
+    injectedArtifacts.set(artifact.id, { elements: [script], cleanup });
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -189,7 +200,7 @@ async function injectCSS(artifact: Artifact): Promise<{ success: boolean; error?
     (document.head || document.documentElement).appendChild(style);
 
     const cleanup = () => {};
-    injectedArtifacts.set(artifact.id, { element: style, cleanup });
+    injectedArtifacts.set(artifact.id, { elements: [style], cleanup });
     return { success: true };
   } catch (error) {
     return { success: false, error: String(error) };
@@ -200,7 +211,7 @@ export function removeArtifact(artifactId: string) {
   const entry = injectedArtifacts.get(artifactId);
   if (entry) {
     entry.cleanup();
-    entry.element.remove();
+    entry.elements.forEach(el => el.remove());
     injectedArtifacts.delete(artifactId);
   }
 }

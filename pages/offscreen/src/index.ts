@@ -6,7 +6,7 @@ import {
   getWorkerStatuses,
 } from './worker-registry.js';
 
-console.log('[WebForge Offscreen] Worker runtime loaded');
+console.log('[Conjure Offscreen] Worker runtime loaded');
 
 // ---------------------------------------------------------------------------
 // postMessage relay: sandbox iframe → service worker
@@ -127,7 +127,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handler()
     .then(sendResponse)
     .catch(err => {
-      console.error('[WebForge Offscreen] Handler error:', err);
+      console.error('[Conjure Offscreen] Handler error:', err);
       sendResponse({ error: err.message });
     });
 
@@ -185,13 +185,13 @@ async function startWorker(
     const instance = createWorkerInstance(extensionId, artifactId, iframe);
     instance.status = 'running';
     notifyStatusUpdate(extensionId, 'running');
-    console.log(`[WebForge Offscreen] Worker started for extension: ${extensionId}`);
+    console.log(`[Conjure Offscreen] Worker started for extension: ${extensionId}`);
     return { success: true };
   } else {
     // Execution failed — clean up iframe
     iframe.remove();
     notifyStatusUpdate(extensionId, 'error', execResult.error);
-    console.error(`[WebForge Offscreen] Worker start failed for ${extensionId}:`, execResult.error);
+    console.error(`[Conjure Offscreen] Worker start failed for ${extensionId}:`, execResult.error);
     return { success: false, error: execResult.error };
   }
 }

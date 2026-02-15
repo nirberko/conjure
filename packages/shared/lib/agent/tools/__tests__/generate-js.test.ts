@@ -26,19 +26,4 @@ describe('generate_js_script tool', () => {
     expect(artifact!.codeVersions).toHaveLength(1);
   });
 
-  it('creates artifact with optional targetSelector', async () => {
-    const ctx = createMockToolContext();
-    const tool = createGenerateJsTool(ctx);
-
-    const resultJson = await tool.invoke({
-      name: 'Highlighter',
-      description: 'Highlights element',
-      code: 'document.querySelector("#main").style.border = "2px solid red";',
-      targetSelector: '#main',
-    });
-
-    const result = JSON.parse(resultJson);
-    const artifact = await getArtifact(result.artifactId);
-    expect(artifact!.cssSelector).toBe('#main');
-  });
 });

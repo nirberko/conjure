@@ -16,7 +16,7 @@ export async function migrateV1ToV2(): Promise<void> {
     return;
   }
 
-  console.log(`[WebForge] Migrating ${components.length} components to Extensions...`);
+  console.log(`[Conjure] Migrating ${components.length} components to Extensions...`);
 
   for (const component of components) {
     const now = Date.now();
@@ -38,8 +38,6 @@ export async function migrateV1ToV2(): Promise<void> {
       name: component.name,
       code: component.code,
       codeVersions: component.codeVersions ?? [{ code: component.code, timestamp: component.createdAt }],
-      cssSelector: component.cssSelector,
-      injectionMode: component.injectionMode,
       enabled: true,
       createdAt: component.createdAt,
       updatedAt: now,
@@ -50,5 +48,5 @@ export async function migrateV1ToV2(): Promise<void> {
   }
 
   await db.settings.put({ key: MIGRATION_KEY, value: true });
-  console.log('[WebForge] Migration complete');
+  console.log('[Conjure] Migration complete');
 }

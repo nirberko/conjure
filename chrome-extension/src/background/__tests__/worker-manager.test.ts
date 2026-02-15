@@ -49,8 +49,6 @@ async function createWorkerArtifact(extensionId: string, code = 'console.log("wo
     type: 'background-worker',
     name: 'Test Worker',
     code,
-    cssSelector: '',
-    injectionMode: 'append',
     enabled: true,
   });
 

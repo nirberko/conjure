@@ -1,9 +1,33 @@
 import { ensureOffscreenDocument, closeOffscreenIfEmpty } from './offscreen-manager.js';
 import { getArtifact, getArtifactsByExtension, getAllExtensions, extensionDBManager } from '@extension/shared';
-import type { ExtDBOperation } from '@extension/shared';
+import type { ExtDBOperation, WorkerLog } from '@extension/shared';
 
 // Mirror of worker statuses from the offscreen document
 const workerStatuses = new Map<string, { status: string; artifactId: string; error?: string }>();
+
+// In-memory log buffer keyed by extensionId
+const MAX_LOGS_PER_WORKER = 500;
+const workerLogs = new Map<string, WorkerLog[]>();
+
+export function pushWorkerLog(extensionId: string, level: 'log' | 'error', args: unknown[]): void {
+  let logs = workerLogs.get(extensionId);
+  if (!logs) {
+    logs = [];
+    workerLogs.set(extensionId, logs);
+  }
+  logs.push({ level, args, timestamp: Date.now() });
+  if (logs.length > MAX_LOGS_PER_WORKER) {
+    logs.splice(0, logs.length - MAX_LOGS_PER_WORKER);
+  }
+}
+
+export function getWorkerLogs(extensionId: string): WorkerLog[] {
+  return workerLogs.get(extensionId) ?? [];
+}
+
+export function clearWorkerLogs(extensionId: string): void {
+  workerLogs.delete(extensionId);
+}
 
 async function sendToOffscreen(message: Record<string, unknown>): Promise<unknown> {
   await ensureOffscreenDocument();
@@ -37,6 +61,7 @@ export async function stopBackgroundWorker(extensionId: string): Promise<{ succe
   })) as { success: boolean };
 
   workerStatuses.delete(extensionId);
+  clearWorkerLogs(extensionId);
 
   // Close offscreen if no workers left
   if (workerStatuses.size === 0) {
@@ -101,7 +126,7 @@ export function dispatchWorkerTrigger(extensionId: string, trigger: string, data
     trigger,
     data,
   }).catch(err => {
-    console.warn(`[WebForge] Failed to dispatch trigger ${trigger} to worker ${extensionId}:`, err);
+    console.warn(`[Conjure] Failed to dispatch trigger ${trigger} to worker ${extensionId}:`, err);
   });
 }
 
@@ -113,7 +138,7 @@ export function broadcastStorageChange(extensionId: string, changes: unknown): v
     extensionId,
     changes,
   }).catch(err => {
-    console.warn('[WebForge] Failed to broadcast storage change:', err);
+    console.warn('[Conjure] Failed to broadcast storage change:', err);
   });
 }
 
@@ -190,6 +215,25 @@ export async function handleWorkerApiCall(requestId: string, method: string, arg
         result = { success: true, tabCount: tabs.length };
         break;
       }
+      case 'env.get': {
+        const [extensionId, key] = args as [string, string];
+        const envData = ((await extensionDBManager.storageGet(extensionId, '_env')) ?? {}) as Record<string, string>;
+        result = envData[key] ?? null;
+        break;
+      }
+      case 'env.getAll': {
+        const [extensionId] = args as [string];
+        result = ((await extensionDBManager.storageGet(extensionId, '_env')) ?? {}) as Record<string, string>;
+        break;
+      }
+      case 'env.set': {
+        const [extensionId, key, value] = args as [string, string, string];
+        const envData = ((await extensionDBManager.storageGet(extensionId, '_env')) ?? {}) as Record<string, string>;
+        envData[key] = value;
+        await extensionDBManager.storageSet(extensionId, '_env', envData);
+        result = { success: true };
+        break;
+      }
       case 'extdb.createTables': {
         const [extensionId, tables] = args as [string, Record<string, string>];
         result = await extensionDBManager.createTables(extensionId, tables);
@@ -237,9 +281,9 @@ export async function autoStartBackgroundWorkers(): Promise<void> {
     const artifacts = await getArtifactsByExtension(ext.id);
     const workerArtifact = artifacts.find(a => a.type === 'background-worker' && a.enabled);
     if (workerArtifact) {
-      console.log(`[WebForge] Auto-starting background worker for extension: ${ext.name}`);
+      console.log(`[Conjure] Auto-starting background worker for extension: ${ext.name}`);
       startBackgroundWorker(workerArtifact.id).catch(err => {
-        console.error(`[WebForge] Failed to auto-start worker for ${ext.name}:`, err);
+        console.error(`[Conjure] Failed to auto-start worker for ${ext.name}:`, err);
       });
     }
   }

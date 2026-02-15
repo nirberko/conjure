@@ -1,8 +1,8 @@
-# WebForge
+# Conjure
 
 **AI-Powered Component Injector — Enhance any website with custom UI components**
 
-WebForge is a Chrome extension that lets you create and inject custom React components, JavaScript scripts, CSS styles, and background workers into any website using AI. Describe what you want in natural language; the AI agent generates code, deploys it to the page (or runs it in a persistent worker), and re-injects it automatically on every visit to matching URLs.
+Conjure is a Chrome extension that lets you create and inject custom React components, JavaScript scripts, CSS styles, and background workers into any website using AI. Describe what you want in natural language; the AI agent generates code, deploys it to the page (or runs it in a persistent worker), and re-injects it automatically on every visit to matching URLs.
 
 ---
 
@@ -39,7 +39,7 @@ WebForge is a Chrome extension that lets you create and inject custom React comp
 
 ## About This Project
 
-This repository is a **Chrome extension monorepo** for **WebForge**. It is built as a **Turborepo** with **pnpm workspaces**: the extension shell lives in `chrome-extension/`, user-facing pages (popup, side panel) and background pages (content script, offscreen, sandbox) live under `pages/`, and shared logic lives in `packages/`. The extension uses **Manifest V3**, a **service worker** for the background, and the **side panel** as the main UI. All persistent data is stored in **IndexedDB** via **Dexie**; AI is orchestrated with **LangChain** and **LangGraph**, and the agent can generate **React components**, **JS scripts**, **CSS**, and **background workers** that run in an offscreen document.
+This repository is a **Chrome extension monorepo** for **Conjure**. It is built as a **Turborepo** with **pnpm workspaces**: the extension shell lives in `chrome-extension/`, user-facing pages (popup, side panel) and background pages (content script, offscreen, sandbox) live under `pages/`, and shared logic lives in `packages/`. The extension uses **Manifest V3**, a **service worker** for the background, and the **side panel** as the main UI. All persistent data is stored in **IndexedDB** via **Dexie**; AI is orchestrated with **LangChain** and **LangGraph**, and the agent can generate **React components**, **JS scripts**, **CSS**, and **background workers** that run in an offscreen document.
 
 ---
 
@@ -47,7 +47,7 @@ This repository is a **Chrome extension monorepo** for **WebForge**. It is built
 
 Modern websites are not always built the way you need them to be. Maybe you want a dark mode toggle on a site that doesn't have one, a word counter on a text editor, a price tracker overlay on a shopping page, or a custom dashboard widget on your project management tool.
 
-WebForge makes this possible without writing code yourself. You open the side panel, tell the AI what you want ("Add a floating timer to the bottom-right corner"), pick a target element on the page, and the AI generates a fully functional React component, JavaScript snippet, or CSS rule. It gets injected into the page instantly, and WebForge remembers it — re-injecting it automatically every time you visit a matching URL.
+Conjure makes this possible without writing code yourself. You open the side panel, tell the AI what you want ("Add a floating timer to the bottom-right corner"), pick a target element on the page, and the AI generates a fully functional React component, JavaScript snippet, or CSS rule. It gets injected into the page instantly, and Conjure remembers it — re-injecting it automatically every time you visit a matching URL.
 
 You work by creating **extensions** (scoped to URL patterns). Each extension can have multiple **artifacts**: React components, JS scripts, CSS, or **background workers**. The AI agent (LangGraph) handles the full lifecycle: planning, generating, deploying, and verifying artifacts. Background workers run in a persistent offscreen document and can react to storage changes or run on a schedule.
 
@@ -72,7 +72,7 @@ You work by creating **extensions** (scoped to URL patterns). Each extension can
 
 ## How It Works
 
-1. **Open WebForge** — Click the extension icon or use the popup to open the side panel.
+1. **Open Conjure** — Click the extension icon or use the popup to open the side panel.
 2. **Create an Extension** — Give it a name, URL pattern, and description.
 3. **Chat with the Agent** — Describe what you want. The agent uses tools to:
    - Inspect the current page's DOM and styles
@@ -94,7 +94,7 @@ The extension UI is split between a **popup** and the **side panel**.
 
 ### Side panel layout
 
-- **Header** — Shows "WebForge" and anchors the main tabs.
+- **Header** — Shows "Conjure" and anchors the main tabs.
 - **Main tabs**
   - **Extensions** — List of all extensions (name, URL pattern, description). Each card has an enable/disable toggle and delete. You can create a new extension with name, URL pattern (e.g. `https://*.github.com/*`), and optional description. Selecting an extension opens its **detail view**.
   - **Settings** — AI provider (OpenAI, Anthropic, Google), API key(s), and model selection. Settings are persisted in IndexedDB.
@@ -110,7 +110,7 @@ When you open an extension from the list:
 
 ### Content script (no visible UI by default)
 
-The content script runs on every `http`/`https` page. It does not show UI unless the agent deploys an artifact or activates the element picker. It handles: URL-based auto-loading of extensions, injection/removal of artifacts, DOM serialization, style inspection, page text reading, deployment verification, and forwarding worker messages to injected React components via `webforge-worker-message` custom events.
+The content script runs on every `http`/`https` page. It does not show UI unless the agent deploys an artifact or activates the element picker. It handles: URL-based auto-loading of extensions, injection/removal of artifacts, DOM serialization, style inspection, page text reading, deployment verification, and forwarding worker messages to injected React components via `conjure-worker-message` custom events.
 
 ---
 
@@ -254,7 +254,7 @@ Artifacts of type **background-worker** are JavaScript that runs in a persistent
 
 ### Content Script Injection
 
-WebForge injects code into pages through multiple mechanisms:
+Conjure injects code into pages through multiple mechanisms:
 
 1. **React components** — A React runtime (`React` + `ReactDOM`) is injected into the page's `MAIN` world as `window.__WEBFORGE__`. Components are written as JSX, transpiled with **Sucrase** at runtime, and rendered into dynamically created mount points.
 
@@ -347,7 +347,7 @@ Load as a temporary add-on from `about:debugging#/runtime/this-firefox`.
 
 ## Usage
 
-1. **Open the extension** — Click the WebForge icon; the side panel opens (or open it via the popup).
+1. **Open the extension** — Click the Conjure icon; the side panel opens (or open it via the popup).
 2. **Configure AI** — In **Settings**, choose provider (OpenAI, Anthropic, Google), enter API key(s), and select a model. Save.
 3. **Create an extension** — In **Extensions**, click "New Extension", set name and URL pattern (e.g. `https://*.github.com/*`), optionally description, then Create.
 4. **Chat with the agent** — Open an extension to see **Chat** and **Artifacts**. In Chat, describe what you want (e.g. "Add a dark mode toggle"). The agent will inspect the page, generate artifacts (React, JS, CSS, or background worker), deploy them, and verify.

@@ -117,7 +117,7 @@ export function ProviderSettings() {
           {/* 01. AI Provider */}
           <div className="space-y-1">
             <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              01. AI Provider
+              AI Provider
             </label>
             <div className="group relative">
               <select
@@ -139,7 +139,7 @@ export function ProviderSettings() {
           {/* 02. API Access Key */}
           <div className="space-y-1">
             <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              02. API Access Key
+              API Access Key
             </label>
             <div className="relative">
               <input
@@ -164,7 +164,7 @@ export function ProviderSettings() {
           {/* 03. Agent Recursion Limit */}
           <div className="space-y-1">
             <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              03. Agent Recursion Limit
+              Agent Recursion Limit
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -188,7 +188,7 @@ export function ProviderSettings() {
           {/* 04. Neural Engine Selection */}
           <div className="space-y-1">
             <label className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              04. Neural Engine Selection
+              Neural Engine Selection
             </label>
             <div className="group relative">
               <select

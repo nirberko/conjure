@@ -11,7 +11,7 @@ describe('generate_background_worker tool', () => {
     const resultJson = await tool.invoke({
       name: 'PageTracker',
       description: 'Tracks page navigation',
-      code: 'webforge.on("url_navigation", (e) => webforge.log(e.url));',
+      code: 'conjure.on("url_navigation", (e) => conjure.log(e.url));',
     });
 
     const result = JSON.parse(resultJson);

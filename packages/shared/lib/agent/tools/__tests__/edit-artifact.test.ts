@@ -13,8 +13,6 @@ describe('edit_artifact tool', () => {
       type: 'react-component',
       name: 'Widget',
       code: 'function W() { return <div>v1</div>; }\nreturn W;',
-      cssSelector: 'body',
-      injectionMode: 'append',
       enabled: true,
     });
 
@@ -57,13 +55,13 @@ describe('edit_artifact tool', () => {
       extensionId: ctx.extensionId,
       type: 'background-worker',
       name: 'Worker',
-      code: 'webforge.log("v1");',
+      code: 'conjure.log("v1");',
       enabled: true,
     });
 
     await tool.invoke({
       artifactId: artifact.id,
-      newCode: 'webforge.log("v2");',
+      newCode: 'conjure.log("v2");',
       instruction: 'Updated log',
     });
 

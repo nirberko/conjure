@@ -3,9 +3,10 @@ import {
   addAgentMessage,
   updateLastAgentMessage,
   clearAgentConversation,
+  REQUEST_USER_INPUT_TOOL_NAME,
 } from '@extension/shared';
 import { useState, useCallback, useRef, useEffect } from 'react';
-import type { Artifact, AgentChatMessage, ToolCallDisplay, ThinkingData, MessageDisplayItem } from '@extension/shared';
+import type { Artifact, AgentChatMessage, ToolCallDisplay, ThinkingData, MessageDisplayItem, UserInputRequest } from '@extension/shared';
 
 export type { ToolCallDisplay, ThinkingData, MessageDisplayItem } from '@extension/shared';
 export type AgentMessage = AgentChatMessage;
@@ -20,6 +21,7 @@ export function useAgentChat(extensionId: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [activeThinking, setActiveThinking] = useState<ActiveThinking | null>(null);
+  const [pendingInputRequest, setPendingInputRequest] = useState<UserInputRequest | null>(null);
   const pendingToolCalls = useRef<ToolCallDisplay[]>([]);
   const pendingDisplayItems = useRef<MessageDisplayItem[]>([]);
   const pendingThinking = useRef<ThinkingData | null>(null);
@@ -36,7 +38,7 @@ export function useAgentChat(extensionId: string) {
           setActiveThinking({ startTime: Date.now() });
         }
       })
-      .catch(err => console.error('[WebForge] Failed to query agent status:', err));
+      .catch(err => console.error('[Conjure] Failed to query agent status:', err));
 
     getAgentConversation(extensionId)
       .then(conversation => {
@@ -69,7 +71,7 @@ export function useAgentChat(extensionId: string) {
           messageIdCounter.current = maxId;
         }
       })
-      .catch(err => console.error('[WebForge] Failed to load chat history:', err))
+      .catch(err => console.error('[Conjure] Failed to load chat history:', err))
       .finally(() => setIsLoading(false));
   }, [extensionId]);
 
@@ -113,7 +115,7 @@ export function useAgentChat(extensionId: string) {
                   // Append to existing assistant message (iteration 2+)
                   const updated = [...prev.slice(0, -1), { ...last, displayItems: [...pendingDisplayItems.current] }];
                   updateLastAgentMessage(extensionId, updated[updated.length - 1]).catch(err =>
-                    console.error('[WebForge] Failed to persist thinking:', err),
+                    console.error('[Conjure] Failed to persist thinking:', err),
                   );
                   return updated;
                 }
@@ -129,7 +131,7 @@ export function useAgentChat(extensionId: string) {
                   displayItems: [...pendingDisplayItems.current],
                 };
                 addAgentMessage(extensionId, newMsg).catch(err =>
-                  console.error('[WebForge] Failed to persist thinking message:', err),
+                  console.error('[Conjure] Failed to persist thinking message:', err),
                 );
                 return [...prev, newMsg];
               });
@@ -138,6 +140,10 @@ export function useAgentChat(extensionId: string) {
           break;
 
         case 'tool_call': {
+          // If this is a request_user_input call, show the form
+          if (event.data.toolName === REQUEST_USER_INPUT_TOOL_NAME && event.data.toolArgs) {
+            setPendingInputRequest(event.data.toolArgs as unknown as UserInputRequest);
+          }
           const tc: ToolCallDisplay = {
             name: event.data.toolName ?? 'unknown',
             args: event.data.toolArgs ?? {},
@@ -180,11 +186,11 @@ export function useAgentChat(extensionId: string) {
             if (lastMsg?.role === 'assistant') {
               if (last?.role === 'assistant') {
                 updateLastAgentMessage(extensionId, lastMsg).catch(err =>
-                  console.error('[WebForge] Failed to persist tool_call:', err),
+                  console.error('[Conjure] Failed to persist tool_call:', err),
                 );
               } else {
                 addAgentMessage(extensionId, lastMsg).catch(err =>
-                  console.error('[WebForge] Failed to persist new assistant message:', err),
+                  console.error('[Conjure] Failed to persist new assistant message:', err),
                 );
               }
             }
@@ -194,6 +200,9 @@ export function useAgentChat(extensionId: string) {
         }
 
         case 'tool_result': {
+          if (event.data.toolName === REQUEST_USER_INPUT_TOOL_NAME) {
+            setPendingInputRequest(null);
+          }
           const tcRef = pendingToolCalls.current.find(t => t.name === event.data.toolName && t.status === 'pending');
           if (tcRef) {
             // Mutate in place — same object is in both pendingToolCalls and pendingDisplayItems
@@ -215,7 +224,7 @@ export function useAgentChat(extensionId: string) {
               // Persist the updated tool result
               const lastMsg = updated[updated.length - 1];
               updateLastAgentMessage(extensionId, lastMsg).catch(err =>
-                console.error('[WebForge] Failed to persist tool_result:', err),
+                console.error('[Conjure] Failed to persist tool_result:', err),
               );
               return updated;
             }
@@ -245,7 +254,7 @@ export function useAgentChat(extensionId: string) {
               };
               const updated = [...prev.slice(0, -1), merged];
               updateLastAgentMessage(extensionId, merged).catch(err =>
-                console.error('[WebForge] Failed to persist response:', err),
+                console.error('[Conjure] Failed to persist response:', err),
               );
               return updated;
             }
@@ -259,7 +268,7 @@ export function useAgentChat(extensionId: string) {
               displayItems: responseDisplayItems,
             };
             addAgentMessage(extensionId, responseMsg).catch(err =>
-              console.error('[WebForge] Failed to persist response:', err),
+              console.error('[Conjure] Failed to persist response:', err),
             );
             return [...prev, responseMsg];
           });
@@ -271,6 +280,7 @@ export function useAgentChat(extensionId: string) {
           pendingDisplayItems.current = [];
           pendingThinking.current = null;
           setActiveThinking(null);
+          setPendingInputRequest(null);
           const errorMsg: AgentMessage = {
             id: `msg-${++messageIdCounter.current}`,
             role: 'assistant',
@@ -281,12 +291,13 @@ export function useAgentChat(extensionId: string) {
           setIsRunning(false);
           // Persist the error message
           addAgentMessage(extensionId, errorMsg).catch(err =>
-            console.error('[WebForge] Failed to persist error:', err),
+            console.error('[Conjure] Failed to persist error:', err),
           );
           break;
         }
 
         case 'done':
+          setPendingInputRequest(null);
           // Resolve any still-pending tool calls to 'skipped' so they don't show as perpetually loading
           if (pendingToolCalls.current.some(tc => tc.status === 'pending')) {
             for (const tc of pendingToolCalls.current) {
@@ -306,7 +317,7 @@ export function useAgentChat(extensionId: string) {
                   },
                 ];
                 updateLastAgentMessage(extensionId, updated[updated.length - 1]).catch(err =>
-                  console.error('[WebForge] Failed to persist skipped tool calls:', err),
+                  console.error('[Conjure] Failed to persist skipped tool calls:', err),
                 );
                 return updated;
               }
@@ -346,7 +357,7 @@ export function useAgentChat(extensionId: string) {
 
       // Persist user message
       addAgentMessage(extensionId, userMsg).catch(err =>
-        console.error('[WebForge] Failed to persist user message:', err),
+        console.error('[Conjure] Failed to persist user message:', err),
       );
 
       chrome.runtime
@@ -354,7 +365,7 @@ export function useAgentChat(extensionId: string) {
           type: 'AGENT_RUN',
           payload: { extensionId, message: content },
         })
-        .catch(err => console.error('[WebForge] Failed to send AGENT_RUN:', err));
+        .catch(err => console.error('[Conjure] Failed to send AGENT_RUN:', err));
     },
     [extensionId, isRunning],
   );
@@ -371,13 +382,30 @@ export function useAgentChat(extensionId: string) {
     pendingDisplayItems.current = [];
   }, [extensionId]);
 
+  const submitUserInput = useCallback(
+    (values: Record<string, string | number>) => {
+      chrome.runtime
+        .sendMessage({ type: 'USER_INPUT_RESULT', payload: values })
+        .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT:', err));
+      setPendingInputRequest(null);
+    },
+    [],
+  );
+
+  const cancelUserInput = useCallback(() => {
+    chrome.runtime
+      .sendMessage({ type: 'USER_INPUT_RESULT', payload: null })
+      .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT cancel:', err));
+    setPendingInputRequest(null);
+  }, []);
+
   const clearChat = useCallback(() => {
     setMessages([]);
     pendingToolCalls.current = [];
     pendingDisplayItems.current = [];
     setIsRunning(false);
-    clearAgentConversation(extensionId).catch(err => console.error('[WebForge] Failed to clear conversation:', err));
+    clearAgentConversation(extensionId).catch(err => console.error('[Conjure] Failed to clear conversation:', err));
   }, [extensionId]);
 
-  return { messages, isRunning, isLoading, artifacts, activeThinking, sendMessage, stopAgent, clearChat };
+  return { messages, isRunning, isLoading, artifacts, activeThinking, pendingInputRequest, sendMessage, stopAgent, clearChat, submitUserInput, cancelUserInput };
 }

@@ -23,7 +23,7 @@ export interface AgentCheckpointWrite {
   value: string; // JSON serialized
 }
 
-export type WebForgeDB = Dexie & {
+export type ConjureDB = Dexie & {
   components: Table<Component, string>;
   conversations: Table<Conversation, string>;
   settings: Table<Settings, string>;
@@ -34,8 +34,8 @@ export type WebForgeDB = Dexie & {
   extensionSchemas: Table<ExtensionSchema, string>;
 };
 
-export function createDB(): WebForgeDB {
-  const db = new Dexie('webforge') as WebForgeDB;
+export function createDB(): ConjureDB {
+  const db = new Dexie('conjure') as ConjureDB;
 
   db.version(1).stores({
     components: 'id, urlPattern, enabled',

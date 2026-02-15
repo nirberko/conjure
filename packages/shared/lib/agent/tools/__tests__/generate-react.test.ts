@@ -12,8 +12,6 @@ describe('generate_react_component tool', () => {
       name: 'TestWidget',
       description: 'A test widget',
       code: 'function TestWidget() { return <div>Hi</div>; }\nreturn TestWidget;',
-      cssSelector: '#root',
-      injectionMode: 'append',
     });
 
     const result = JSON.parse(resultJson);
@@ -26,8 +24,6 @@ describe('generate_react_component tool', () => {
     expect(artifact!.extensionId).toBe('test-extension-id');
     expect(artifact!.name).toBe('TestWidget');
     expect(artifact!.code).toContain('TestWidget');
-    expect(artifact!.cssSelector).toBe('#root');
-    expect(artifact!.injectionMode).toBe('append');
     expect(artifact!.codeVersions).toHaveLength(1);
   });
 
@@ -39,8 +35,6 @@ describe('generate_react_component tool', () => {
       name: 'Widget',
       description: 'Shows data',
       code: 'function W() { return <div/>; }\nreturn W;',
-      cssSelector: 'body',
-      injectionMode: 'prepend',
     });
 
     const result = JSON.parse(resultJson);

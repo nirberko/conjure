@@ -82,7 +82,7 @@ db.version(3).stores({
 });
 ```
 
-**Step 2: Update the `WebForgeDB` type**
+**Step 2: Update the `ConjureDB` type**
 
 Import `AgentConversation` alongside the existing types. The `conversations` table now holds both `Conversation` and `AgentConversation` records (they share the same table).
 
@@ -217,7 +217,7 @@ useEffect(() => {
         messageIdCounter.current = maxId;
       }
     })
-    .catch(err => console.error('[WebForge] Failed to load chat history:', err))
+    .catch(err => console.error('[Conjure] Failed to load chat history:', err))
     .finally(() => setIsLoading(false));
 }, [extensionId]);
 ```
@@ -228,7 +228,7 @@ After `setMessages(prev => [...prev, userMsg])`, add:
 
 ```ts
 addAgentMessage(extensionId, userMsg as AgentChatMessage).catch(err =>
-  console.error('[WebForge] Failed to persist user message:', err),
+  console.error('[Conjure] Failed to persist user message:', err),
 );
 ```
 
@@ -252,7 +252,7 @@ setMessages(prev => {
   const lastMsg = updated[updated.length - 1];
   if (lastMsg?.role === 'assistant') {
     updateLastAgentMessage(extensionId, lastMsg as AgentChatMessage).catch(err =>
-      console.error('[WebForge] Failed to persist tool_call:', err),
+      console.error('[Conjure] Failed to persist tool_call:', err),
     );
   }
   return updated;
@@ -274,7 +274,7 @@ const clearChat = useCallback(() => {
   pendingToolCalls.current = [];
   setIsRunning(false);
   clearAgentConversation(extensionId).catch(err =>
-    console.error('[WebForge] Failed to clear conversation:', err),
+    console.error('[Conjure] Failed to clear conversation:', err),
   );
 }, [extensionId]);
 ```

@@ -94,8 +94,7 @@ export interface Artifact {
   name: string;
   code: string;
   codeVersions: { code: string; timestamp: number }[];
-  cssSelector?: string;
-  injectionMode?: InjectionMode;
+  elementXPath?: string;
   enabled: boolean;
   createdAt: number;
   updatedAt: number;
@@ -165,6 +164,14 @@ export type ExtDBOperation =
   | { type: 'count'; table: string }
   | { type: 'clear'; table: string };
 
+// --- Worker Log Types ---
+
+export interface WorkerLog {
+  level: 'log' | 'error';
+  args: unknown[];
+  timestamp: number;
+}
+
 // --- Message Types ---
 
 export type MessageType =
@@ -189,6 +196,8 @@ export type MessageType =
   | 'STOP_BACKGROUND_WORKER'
   | 'RELOAD_BACKGROUND_WORKER'
   | 'GET_ALL_WORKER_STATUSES'
+  | 'GET_WORKER_LOGS'
+  | 'CLEAR_WORKER_LOGS'
   | 'WORKER_CUSTOM_MESSAGE'
   // Content script messages
   | 'INSPECT_DOM'
@@ -204,7 +213,32 @@ export type MessageType =
   | 'EXT_DB_QUERY'
   | 'EXT_DB_GET_SCHEMA'
   | 'EXT_DB_STORAGE_GET'
-  | 'EXT_DB_STORAGE_SET';
+  | 'EXT_DB_STORAGE_SET'
+  // Database browser messages
+  | 'DB_BROWSE_LIST_TABLES'
+  | 'DB_BROWSE_GET_ROWS'
+  | 'DB_BROWSE_PUT_ROW'
+  | 'DB_BROWSE_DELETE_ROW'
+  // User input collection
+  | 'USER_INPUT_RESULT';
+
+export interface UserInputField {
+  name: string;
+  label: string;
+  type: 'text' | 'password' | 'number';
+  required?: boolean;
+  description?: string;
+  placeholder?: string;
+  envKey?: string;
+}
+
+export interface UserInputRequest {
+  fields: UserInputField[];
+  title?: string;
+  submitLabel?: string;
+}
+
+export const REQUEST_USER_INPUT_TOOL_NAME = 'request_user_input';
 
 export interface ExtensionMessage {
   type: MessageType;

@@ -28,10 +28,6 @@ export const ExtensionAgentState = Annotation.Root({
     reducer: (_prev, next) => next,
     default: () => 0,
   }),
-  plan: Annotation<string | null>({
-    reducer: (_prev, next) => next,
-    default: () => null,
-  }),
 });
 
 export type ExtensionAgentStateType = typeof ExtensionAgentState.State;

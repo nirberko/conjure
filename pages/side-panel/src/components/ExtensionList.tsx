@@ -53,12 +53,41 @@ const TAG_LABELS: Record<string, string> = {
   'background-worker': 'Worker',
 };
 
+/** Build a URL pattern (origin + /*) from a full page URL, or empty if not a valid http(s) URL. */
+function baseUrlPattern(fullUrl: string | undefined): string {
+  if (!fullUrl || !fullUrl.startsWith('http')) return '';
+  try {
+    const u = new URL(fullUrl);
+    return `${u.origin}/*`;
+  } catch {
+    return '';
+  }
+}
+
 export function ExtensionList({ extensions, loading, onSelect, onCreate, onToggle, onDelete }: ExtensionListProps) {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newUrl, setNewUrl] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const tags = useExtensionTags(extensions);
+
+  // When opening the create form, pre-fill URL with the current tab's base URL
+  useEffect(() => {
+    if (!showCreate) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const pattern = baseUrlPattern(tab?.url);
+        if (!cancelled && pattern) setNewUrl(pattern);
+      } catch {
+        // ignore; leave URL empty
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showCreate]);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newUrl.trim()) return;

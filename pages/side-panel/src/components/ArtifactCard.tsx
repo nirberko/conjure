@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Artifact } from '@extension/shared';
+import { CodeBlock } from './CodeBlock';
 
 export interface WorkerStatus {
   status: string;
@@ -12,6 +13,7 @@ interface ArtifactCardProps {
   workerStatus?: WorkerStatus;
   onStartWorker?: (artifact: Artifact) => void;
   onStopWorker?: (extensionId: string) => void;
+  onViewWorker?: (artifact: Artifact) => void;
 }
 
 const TYPE_BADGES: Record<string, { label: string; badgeClass: string }> = {
@@ -38,6 +40,7 @@ export function ArtifactCard({
   workerStatus,
   onStartWorker,
   onStopWorker,
+  onViewWorker,
 }: ArtifactCardProps) {
   const [showCode, setShowCode] = useState(false);
   const typeInfo = TYPE_BADGES[artifact.type] ?? {
@@ -115,11 +118,10 @@ export function ArtifactCard({
               )}
             </div>
 
-            {/* Selector / description */}
-            {artifact.cssSelector && (
+            {/* XPath target */}
+            {artifact.elementXPath && (
               <p className="font-mono text-[10px] text-slate-500">
-                Target: {artifact.cssSelector}
-                {artifact.injectionMode && <span className="ml-1">({artifact.injectionMode})</span>}
+                XPath: {artifact.elementXPath}
               </p>
             )}
 
@@ -148,6 +150,11 @@ export function ArtifactCard({
                         Start
                       </button>
                     )}
+                    <button
+                      onClick={() => onViewWorker?.(artifact)}
+                      className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
+                      View
+                    </button>
                   </div>
                   {isRunning && (
                     <span className="font-mono text-[9px] text-slate-600">
@@ -163,14 +170,12 @@ export function ArtifactCard({
 
       {/* Code preview */}
       {showCode && (
-        <div className="code-block mt-2 max-h-48 overflow-x-auto overflow-y-auto rounded-md p-3 font-mono text-[10px] leading-5">
-          {artifact.code.split('\n').map((line, i) => (
-            <div key={i} className="flex gap-3">
-              <span className="w-4 select-none text-right text-slate-700">{i + 1}</span>
-              <span className="text-slate-400">{line}</span>
-            </div>
-          ))}
-        </div>
+        <CodeBlock
+          code={artifact.code}
+          language={artifact.type === 'react-component' ? 'jsx' : artifact.type === 'css' ? 'css' : 'javascript'}
+          className="mt-2"
+          maxHeight="12rem"
+        />
       )}
     </div>
   );

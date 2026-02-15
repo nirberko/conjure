@@ -1,5 +1,7 @@
 import { AgentChatPanel } from './AgentChatPanel';
 import { ArtifactList } from './ArtifactList';
+import { DatabaseBrowser } from './DatabaseBrowser';
+import { EnvManager } from './EnvManager';
 import { useState } from 'react';
 import type { Extension } from '@extension/shared';
 
@@ -8,7 +10,7 @@ interface ExtensionDetailProps {
   onBack: () => void;
 }
 
-type SubTab = 'chat' | 'artifacts';
+type SubTab = 'chat' | 'artifacts' | 'database' | 'env';
 
 export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('chat');
@@ -16,6 +18,8 @@ export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
   const subTabs: { id: SubTab; label: string }[] = [
     { id: 'chat', label: 'Chat' },
     { id: 'artifacts', label: 'Artifacts' },
+    { id: 'database', label: 'Database' },
+    { id: 'env', label: 'Env' },
   ];
 
   return (
@@ -30,7 +34,7 @@ export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
             <div className="flex min-w-0 flex-1 flex-col">
               <h1 className="truncate text-xs font-semibold tracking-tight text-slate-200">{extension.name}</h1>
               <p className="mt-0.5 truncate font-mono text-[9px] uppercase tracking-widest text-slate-600">
-                Runtime: WebForge_v4
+                Runtime: Conjure_v4
               </p>
             </div>
           </div>
@@ -72,6 +76,8 @@ export function ExtensionDetail({ extension, onBack }: ExtensionDetailProps) {
       <div className="min-h-0 flex-1 overflow-hidden">
         {activeSubTab === 'chat' && <AgentChatPanel extensionId={extension.id} />}
         {activeSubTab === 'artifacts' && <ArtifactList extensionId={extension.id} />}
+        {activeSubTab === 'database' && <DatabaseBrowser extensionId={extension.id} />}
+        {activeSubTab === 'env' && <EnvManager extensionId={extension.id} />}
       </div>
     </div>
   );

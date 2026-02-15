@@ -16,7 +16,7 @@ describe('OffscreenManager', () => {
       expect(chrome.offscreen.createDocument).toHaveBeenCalledWith({
         url: 'offscreen/index.html',
         reasons: [chrome.offscreen.Reason.WORKERS],
-        justification: 'Run background worker scripts for WebForge extensions',
+        justification: 'Run background worker scripts for Conjure extensions',
       });
     });
 

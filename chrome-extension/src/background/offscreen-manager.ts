@@ -18,7 +18,7 @@ export async function ensureOffscreenDocument(): Promise<void> {
   creating = chrome.offscreen.createDocument({
     url: 'offscreen/index.html',
     reasons: [chrome.offscreen.Reason.WORKERS],
-    justification: 'Run background worker scripts for WebForge extensions',
+    justification: 'Run background worker scripts for Conjure extensions',
   });
 
   await creating;

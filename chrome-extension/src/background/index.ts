@@ -10,6 +10,9 @@ import {
   autoStartBackgroundWorkers,
   broadcastStorageChange,
   dispatchWorkerTrigger,
+  pushWorkerLog,
+  getWorkerLogs,
+  clearWorkerLogs,
 } from './worker-manager.js';
 import {
   migrateV1ToV2,
@@ -21,22 +24,23 @@ import {
   deleteExtension,
   getArtifactsByExtension,
   extensionDBManager,
+  db,
 } from '@extension/shared';
 import { transform } from 'sucrase';
-import type { Extension, AIProvider, ExtDBOperation } from '@extension/shared';
+import type { Extension, AIProvider, ExtDBOperation, ExtensionSchema } from '@extension/shared';
 
-console.log('[WebForge] Background service worker loaded');
+console.log('[Conjure] Background service worker loaded');
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
 
 // Run migration on startup
-migrateV1ToV2().catch(err => console.error('[WebForge] Migration error:', err));
+migrateV1ToV2().catch(err => console.error('[Conjure] Migration error:', err));
 
 // Set up auto-injection on tab navigation
 setupTabListener();
 
 // Auto-start background workers for enabled extensions
-autoStartBackgroundWorkers().catch(err => console.error('[WebForge] Auto-start workers error:', err));
+autoStartBackgroundWorkers().catch(err => console.error('[Conjure] Auto-start workers error:', err));
 
 // Message router
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -53,6 +57,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return { success: true };
 
         case 'WORKER_LOG':
+          pushWorkerLog(message.extensionId, message.level ?? 'log', message.args ?? []);
           if (message.level === 'error') {
             console.error(`[Worker:${message.extensionId}]`, ...(message.args ?? []));
           } else {
@@ -61,7 +66,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           return { success: true };
 
         case 'OFFSCREEN_READY':
-          console.log('[WebForge] Offscreen document ready');
+          console.log('[Conjure] Offscreen document ready');
           return { success: true };
 
         default:
@@ -72,13 +77,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handler()
       .then(sendResponse)
       .catch(err => {
-        console.error('[WebForge] Service-worker handler error:', err);
+        console.error('[Conjure] Service-worker handler error:', err);
         sendResponse({ error: err.message });
       });
     return true;
   }
 
-  console.log('[WebForge] Message received:', message.type, message.payload);
+  console.log('[Conjure] Message received:', message.type, message.payload);
   const handler = async () => {
     switch (message.type) {
       // --- Settings ---
@@ -144,16 +149,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             target: { tabId },
             world: 'MAIN',
             func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
-              const _WF = (window as any).__WEBFORGE__;
+              const _WF = (window as any).__CONJURE__;
               if (!_WF) {
-                console.error('[WebForge] React runtime not loaded');
+                console.error('[Conjure] React runtime not loaded');
                 return;
               }
 
               // Helper: build context code string for embedding in script element
               function buildContextCode(): string {
                 return [
-                  'var _WF = window.__WEBFORGE__;',
+                  'var _WF = window.__CONJURE__;',
                   'var React = _WF.React;',
                   'var ReactDOM = _WF.ReactDOM;',
                   'var _nextReqId = 0;',
@@ -161,7 +166,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   'var _pUrl = ' + JSON.stringify(pUrl) + ';',
                   'var _eId = ' + JSON.stringify(eId) + ';',
                   'function sendMessage(data) {',
-                  '  window.dispatchEvent(new CustomEvent("webforge-send-worker-message", {',
+                  '  window.dispatchEvent(new CustomEvent("conjure-send-worker-message", {',
                   '    detail: { extensionId: _eId, data: data }',
                   '  }));',
                   '}',
@@ -170,19 +175,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   '    if (e.detail && e.detail.extensionId !== _eId) return;',
                   '    callback(e.detail.data);',
                   '  }',
-                  '  window.addEventListener("webforge-worker-message", handler);',
-                  '  return function() { window.removeEventListener("webforge-worker-message", handler); };',
+                  '  window.addEventListener("conjure-worker-message", handler);',
+                  '  return function() { window.removeEventListener("conjure-worker-message", handler); };',
                   '}',
                   'function extDbCall(action, payload) {',
                   '  return new Promise(function(resolve, reject) {',
                   '    var reqId = "db" + (++_nextReqId) + "_" + Date.now();',
                   '    function handler(e) {',
-                  '      window.removeEventListener("webforge-ext-db-" + reqId, handler);',
+                  '      window.removeEventListener("conjure-ext-db-" + reqId, handler);',
                   '      if (e.detail.error) reject(new Error(e.detail.error));',
                   '      else resolve(e.detail.result);',
                   '    }',
-                  '    window.addEventListener("webforge-ext-db-" + reqId, handler);',
-                  '    window.dispatchEvent(new CustomEvent("webforge-ext-db", {',
+                  '    window.addEventListener("conjure-ext-db-" + reqId, handler);',
+                  '    window.dispatchEvent(new CustomEvent("conjure-ext-db", {',
                   '      detail: { extensionId: _eId, action: action, payload: payload, requestId: reqId }',
                   '    }));',
                   '  });',
@@ -205,9 +210,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   '  count: function(table) { return extDbCall("query", { operation: { type: "count", table: table } }); },',
                   '  clear: function(table) { return extDbCall("query", { operation: { type: "clear", table: table } }); }',
                   '};',
+                  'var env = {',
+                  '  get: function(key) { return extDbCall("storageGet", { key: "_env" }).then(function(d) { return (d && d[key]) || null; }); },',
+                  '  getAll: function() { return extDbCall("storageGet", { key: "_env" }).then(function(d) { return d || {}; }); }',
+                  '};',
                   'var context = { getData: getData, setData: setData, pageUrl: ' +
                     JSON.stringify(pUrl) +
-                    ', sendMessage: sendMessage, onWorkerMessage: onWorkerMessage, db: db };',
+                    ', sendMessage: sendMessage, onWorkerMessage: onWorkerMessage, db: db, env: env };',
                 ].join('\n');
               }
 
@@ -222,14 +231,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   return new Promise((resolve, reject) => {
                     const reqId = 'db' + ++_nextReqId + '_' + Date.now();
                     function handler(e: Event) {
-                      window.removeEventListener('webforge-ext-db-' + reqId, handler);
+                      window.removeEventListener('conjure-ext-db-' + reqId, handler);
                       const d = (e as CustomEvent).detail;
                       if (d.error) reject(new Error(d.error));
                       else resolve(d.result);
                     }
-                    window.addEventListener('webforge-ext-db-' + reqId, handler);
+                    window.addEventListener('conjure-ext-db-' + reqId, handler);
                     window.dispatchEvent(
-                      new CustomEvent('webforge-ext-db', {
+                      new CustomEvent('conjure-ext-db', {
                         detail: { extensionId: eId, action, payload, requestId: reqId },
                       }),
                     );
@@ -246,7 +255,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 function sendMessage(data: unknown): void {
                   window.dispatchEvent(
-                    new CustomEvent('webforge-send-worker-message', {
+                    new CustomEvent('conjure-send-worker-message', {
                       detail: { extensionId: eId, data },
                     }),
                   );
@@ -258,8 +267,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                     if (detail?.extensionId !== eId) return;
                     callback(detail.data);
                   };
-                  window.addEventListener('webforge-worker-message', handler);
-                  return () => window.removeEventListener('webforge-worker-message', handler);
+                  window.addEventListener('conjure-worker-message', handler);
+                  return () => window.removeEventListener('conjure-worker-message', handler);
                 }
 
                 const db = {
@@ -287,7 +296,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   clear: (table: string) => extDbCall('query', { operation: { type: 'clear', table } }),
                 };
 
-                const context = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db };
+                const env = {
+                  async get(key: string): Promise<string | null> {
+                    const envData = ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
+                    return envData[key] ?? null;
+                  },
+                  async getAll(): Promise<Record<string, string>> {
+                    return (((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>);
+                  },
+                };
+
+                const context = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db, env };
                 const componentFn = new Function('React', 'ReactDOM', 'context', componentCode);
                 const ComponentResult = componentFn(React, ReactDOM, context);
 
@@ -307,14 +326,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   const mountEl = document.getElementById(mId);
                   if (mountEl) {
                     mountEl.innerHTML =
-                      '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">WebForge: Component render error \u2014 ' +
+                      '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component render error \u2014 ' +
                       (primaryErr.message || String(primaryErr)).replace(/</g, '&lt;') +
                       '</div>';
                   }
-                  console.error('[WebForge] Component render error:', primaryErr);
+                  console.error('[Conjure] Component render error:', primaryErr);
                   return;
                 }
-                console.log('[WebForge] CSP blocks eval, falling back to script element injection');
+                console.log('[Conjure] CSP blocks eval, falling back to script element injection');
               }
 
               // Fallback: inject via <script> element (works with strict-dynamic CSP)
@@ -335,16 +354,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   '  var root = ReactDOM.createRoot(mountEl);\n' +
                   '  root.render(React.createElement(_Component, { context: context }));\n' +
                   '} else if (mountEl) {\n' +
-                  '  mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">WebForge: Component did not return a valid React component.</div>\';\n' +
+                  '  mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component did not return a valid React component.</div>\';\n' +
                   '}\n' +
                   '} catch(err) {\n' +
                   '  var mountEl = document.getElementById(' +
                   JSON.stringify(mId) +
                   ');\n' +
                   '  if (mountEl) {\n' +
-                  '    mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">WebForge: \' + (err.message || String(err)).replace(/</g, "&lt;") + \'</div>\';\n' +
+                  '    mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: \' + (err.message || String(err)).replace(/</g, "&lt;") + \'</div>\';\n' +
                   '  }\n' +
-                  '  console.error("[WebForge] Component render error:", err);\n' +
+                  '  console.error("[Conjure] Component render error:", err);\n' +
                   '}\n' +
                   '})();';
 
@@ -353,11 +372,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 document.documentElement.appendChild(script);
                 script.remove();
               } catch (fallbackErr: any) {
-                console.error('[WebForge] Script element fallback also failed:', fallbackErr);
+                console.error('[Conjure] Script element fallback also failed:', fallbackErr);
                 const mountEl = document.getElementById(mId);
                 if (mountEl) {
                   mountEl.innerHTML =
-                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">WebForge: Cannot inject component — site CSP blocks both eval and dynamic scripts.</div>';
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Cannot inject component — site CSP blocks both eval and dynamic scripts.</div>';
                 }
               }
             },
@@ -390,7 +409,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const { id: extDelId } = message.payload as { id: string };
         await extensionDBManager
           .deleteDatabase(extDelId)
-          .catch(err => console.warn('[WebForge] Failed to delete extension DB:', err));
+          .catch(err => console.warn('[Conjure] Failed to delete extension DB:', err));
         await deleteExtension(extDelId);
         return { success: true };
       }
@@ -414,14 +433,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           extensionId: string;
           message: string;
         };
-        console.log('[WebForge] AGENT_RUN handler entered for extension:', extensionId);
+        console.log('[Conjure] AGENT_RUN handler entered for extension:', extensionId);
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
         const provider = ((await getSetting<string>('ai_provider')) ?? 'openai') as AIProvider;
         const apiKey = (await getSetting<string>(`ai_api_key_${provider}`)) ?? '';
         const model = (await getSetting<string>('ai_model')) ?? '';
 
-        console.log('[WebForge] Agent config:', {
+        console.log('[Conjure] Agent config:', {
           provider,
           model,
           hasApiKey: !!apiKey,
@@ -430,11 +449,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
 
         if (!apiKey) {
-          console.error('[WebForge] No API key for provider:', provider);
+          console.error('[Conjure] No API key for provider:', provider);
           return { success: false, error: `API key not configured for provider: ${provider}` };
         }
 
-        console.log('[WebForge] Calling runAgent...');
+        console.log('[Conjure] Calling runAgent...');
         runAgent(
           {
             extensionId,
@@ -444,7 +463,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             tabInfo: tab ? { tabId: tab.id!, url: tab.url ?? '', title: tab.title } : undefined,
           },
           userMessage,
-        ).catch(err => console.error('[WebForge] Agent run failed:', err));
+        ).catch(err => console.error('[Conjure] Agent run failed:', err));
 
         return { success: true };
       }
@@ -481,6 +500,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       case 'GET_ALL_WORKER_STATUSES': {
         const statuses = await getAllWorkerStatuses();
         return { statuses };
+      }
+
+      case 'GET_WORKER_LOGS': {
+        const { extensionId: logExtId } = message.payload as { extensionId: string };
+        const logs = getWorkerLogs(logExtId);
+        return { logs };
+      }
+
+      case 'CLEAR_WORKER_LOGS': {
+        const { extensionId: clearLogExtId } = message.payload as { extensionId: string };
+        clearWorkerLogs(clearLogExtId);
+        return { success: true };
       }
 
       case 'WORKER_CUSTOM_MESSAGE': {
@@ -548,6 +579,66 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return { success: true };
       }
 
+      // --- Database browser messages ---
+
+      case 'DB_BROWSE_LIST_TABLES': {
+        const { dbId } = (message.payload ?? {}) as { dbId?: string };
+        let targetDb;
+        try {
+          targetDb = dbId ? await extensionDBManager.getDB(dbId) : db;
+        } catch {
+          // Extension has no DB yet — return empty
+          return { tables: [] };
+        }
+        const tables = await Promise.all(
+          targetDb.tables.map(async (table: import('dexie').Table) => ({
+            name: table.name,
+            primaryKey: table.schema.primKey.keyPath,
+            count: await table.count(),
+          })),
+        );
+        return { tables };
+      }
+
+      case 'DB_BROWSE_GET_ROWS': {
+        const { dbId, tableName, page = 0, pageSize = 20 } = message.payload as {
+          dbId?: string;
+          tableName: string;
+          page?: number;
+          pageSize?: number;
+        };
+        const targetDb = dbId ? await extensionDBManager.getDB(dbId) : db;
+        const table = targetDb.table(tableName);
+        const totalCount = await table.count();
+        const rows = await table
+          .offset(page * pageSize)
+          .limit(pageSize)
+          .toArray();
+        return { rows, totalCount, page, pageSize };
+      }
+
+      case 'DB_BROWSE_PUT_ROW': {
+        const { dbId, tableName, data } = message.payload as {
+          dbId?: string;
+          tableName: string;
+          data: Record<string, unknown>;
+        };
+        const targetDb = dbId ? await extensionDBManager.getDB(dbId) : db;
+        const key = await targetDb.table(tableName).put(data);
+        return { success: true, key };
+      }
+
+      case 'DB_BROWSE_DELETE_ROW': {
+        const { dbId, tableName, key } = message.payload as {
+          dbId?: string;
+          tableName: string;
+          key: unknown;
+        };
+        const targetDb = dbId ? await extensionDBManager.getDB(dbId) : db;
+        await targetDb.table(tableName).delete(key as any);
+        return { success: true };
+      }
+
       default:
         return { error: 'Unknown message type' };
     }
@@ -556,7 +647,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handler()
     .then(sendResponse)
     .catch(err => {
-      console.error('[WebForge] Message handler error:', err);
+      console.error('[Conjure] Message handler error:', err);
       sendResponse({ error: err.message });
     });
 

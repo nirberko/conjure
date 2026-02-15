@@ -50,11 +50,9 @@ function createMockLLM(
 }
 
 describe('Agent Graph Integration', () => {
-  it('single turn: planner → orchestrator → END (no tools)', async () => {
+  it('single turn: orchestrator → END (no tools)', async () => {
     const ctx = createMockToolContext();
     const model = createMockLLM([
-      // Planner response
-      { content: 'I should greet the user.' },
       // Orchestrator response (no tool_calls → goes to END)
       { content: 'Hello! How can I help you today?' },
     ]);
@@ -75,27 +73,21 @@ describe('Agent Graph Integration', () => {
     expect(last.content).toBe('Hello! How can I help you today?');
   });
 
-  it('tool call flow: orchestrator → tool_executor → planner → orchestrator → END', async () => {
+  it('tool call flow: orchestrator → tool_executor → orchestrator → END', async () => {
     const ctx = createMockToolContext();
 
-    // We need 4 LLM calls:
-    // 1. Planner (iteration 1)
-    // 2. Orchestrator with tool_calls
-    // 3. Planner (iteration 2, after tool results)
-    // 4. Orchestrator without tool_calls (final response)
+    // We need 2 LLM calls:
+    // 1. Orchestrator with tool_calls
+    // 2. Orchestrator without tool_calls (final response)
     const model = createMockLLM([
-      // 1. Planner
-      { content: 'I need to inspect the page DOM.' },
-      // 2. Orchestrator - calls inspect_page_dom
+      // 1. Orchestrator - calls inspect_page_dom
       {
         content: '',
         tool_calls: [
           { id: 'tc-1', name: 'inspect_page_dom', args: { depth: 3 } },
         ],
       },
-      // 3. Planner (after tool results)
-      { content: 'Got the DOM. Now I can respond.' },
-      // 4. Orchestrator - final response
+      // 2. Orchestrator - final response
       { content: 'The page has a div element at the root.' },
     ]);
 
@@ -130,18 +122,14 @@ describe('Agent Graph Integration', () => {
     const ctx = createMockToolContext();
 
     const model = createMockLLM([
-      // 1. Planner
-      { content: 'Let me try this tool.' },
-      // 2. Orchestrator - calls nonexistent tool
+      // 1. Orchestrator - calls nonexistent tool
       {
         content: '',
         tool_calls: [
           { id: 'tc-1', name: 'nonexistent_tool', args: {} },
         ],
       },
-      // 3. Planner (after error)
-      { content: 'That tool does not exist.' },
-      // 4. Orchestrator - final response
+      // 2. Orchestrator - final response
       { content: 'Sorry, I tried a tool that does not exist.' },
     ]);
 
@@ -168,18 +156,14 @@ describe('Agent Graph Integration', () => {
     ctx.sendToContentScript = vi.fn().mockRejectedValue(new Error('Tab not found'));
 
     const model = createMockLLM([
-      // 1. Planner
-      { content: 'Inspect the DOM.' },
-      // 2. Orchestrator - calls inspect_page_dom
+      // 1. Orchestrator - calls inspect_page_dom
       {
         content: '',
         tool_calls: [
           { id: 'tc-1', name: 'inspect_page_dom', args: { depth: 2 } },
         ],
       },
-      // 3. Planner (after error)
-      { content: 'The inspection failed.' },
-      // 4. Orchestrator - final response
+      // 2. Orchestrator - final response
       { content: 'I could not inspect the page.' },
     ]);
 
