@@ -11,3 +11,5 @@ runs:
         cache: pnpm
     - run: pnpm install --frozen-lockfile
       shell: bash
+      env:
+        HUSKY: '0'
