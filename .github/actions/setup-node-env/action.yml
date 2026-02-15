@@ -9,7 +9,7 @@ runs:
       with:
         node-version-file: '.nvmrc'
         cache: pnpm
-    - run: pnpm install --frozen-lockfile
+    - run: pnpm install --frozen-lockfile --ignore-scripts
       shell: bash
-      env:
-        HUSKY: '0'
+    - run: pnpm run --if-present postinstall
+      shell: bash
