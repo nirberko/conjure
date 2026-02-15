@@ -3,12 +3,13 @@ import { z } from 'zod';
 
 export const createThinkTool = () =>
   tool(
-    async ({ goal, pageInteraction, domNeeded, artifactType, steps, existingArtifacts, risks }) =>
+    async ({ goal, pageInteraction, domNeeded, needsWorker, artifactType, steps, existingArtifacts, risks }) =>
       JSON.stringify({
         success: true,
         goal,
         pageInteraction,
         domNeeded,
+        needsWorker,
         artifactType,
         steps,
         existingArtifacts,
@@ -22,6 +23,11 @@ export const createThinkTool = () =>
         goal: z.string().describe('What the user is asking for (one sentence)'),
         pageInteraction: z.boolean().describe('Does this involve existing page elements?'),
         domNeeded: z.boolean().describe('Do I need to inspect the DOM before generating code?'),
+        needsWorker: z
+          .boolean()
+          .describe(
+            'Does this task involve HTTP requests to external APIs, polling, data processing, or orchestration? If true, that logic MUST go in a background worker, not in a component.',
+          ),
         artifactType: z
           .enum(['react-component', 'js-script', 'css', 'background-worker', 'edit', 'none'])
           .describe('Which artifact type fits this request'),

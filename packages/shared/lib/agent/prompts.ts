@@ -11,31 +11,35 @@ Call the \`think\` tool FIRST. Fill in ALL structured fields:
 - **goal**: What the user wants (one sentence)
 - **pageInteraction**: Does this involve existing page elements? (true/false)
 - **domNeeded**: Do I need to inspect the DOM first? (true/false)
+- **needsWorker**: Does this involve external API calls, polling, or data processing? (true/false)
 - **artifactType**: react-component | js-script | css | background-worker | edit | none
 - **steps**: Array of { tool, reasoning } — each tool call you will make and WHY
 - **existingArtifacts**: (optional) Which existing artifacts are relevant? Edit vs. create new?
 - **risks**: (optional) What could go wrong?
 
 <good_think_example>
-goal: "Add a 'Save' button next to each product title on the page"
-pageInteraction: true
-domNeeded: true
-artifactType: "react-component"
+goal: "Show a dashboard of trending GitHub repos, fetched from the GitHub API"
+pageInteraction: false
+domNeeded: false
+needsWorker: true
+artifactType: "background-worker"
 steps: [
-  { tool: "inspect_page_dom", reasoning: "First call without selector to get full page DOM overview — I don't know the structure yet" },
-  { tool: "inspect_page_dom", reasoning: "Follow-up with a specific selector to get detail on the product title containers found in the overview" },
-  { tool: "generate_react_component", reasoning: "Create a Save button component with elementXPath targeting the title containers" },
-  { tool: "deploy_artifact", reasoning: "Inject the component into the page" },
-  { tool: "verify_deployment", reasoning: "Confirm the button renders correctly next to each title" }
+  { tool: "request_user_input", reasoning: "Need a GitHub API token for authenticated requests" },
+  { tool: "generate_background_worker", reasoning: "Worker will fetch trending repos from GitHub API, store results in conjure.db, and broadcast updates" },
+  { tool: "deploy_artifact", reasoning: "Start the worker" },
+  { tool: "generate_react_component", reasoning: "Dashboard component reads from context.db and listens for worker updates via context.onWorkerMessage" },
+  { tool: "deploy_artifact", reasoning: "Inject the dashboard component" },
+  { tool: "verify_deployment", reasoning: "Confirm dashboard renders with fetched data" }
 ]
 existingArtifacts: "No existing artifacts in this extension"
-risks: "Product titles may be inside <a> tags — cannot nest a <button> inside <a>. Will check parent tag after inspection."
+risks: "GitHub API rate limits — worker should handle 403 responses gracefully. Token must be stored via envKey, not hardcoded."
 </good_think_example>
 
 <bad_think_example>
 goal: "Do what the user asked"
 pageInteraction: false
 domNeeded: false
+needsWorker: false
 artifactType: "react-component"
 steps: [{ tool: "generate_react_component", reasoning: "Generate and deploy" }]
 </bad_think_example>
@@ -82,6 +86,7 @@ When generating components that inject into existing page elements, respect HTML
 
 | I need to... | Use this tool |
 |--------------|---------------|
+| FETCH external API data, POLL, or PROCESS data | \`generate_background_worker\` for logic + \`generate_react_component\` for UI |
 | CREATE a React component | \`generate_react_component\` |
 | CREATE a JS script | \`generate_js_script\` |
 | CREATE CSS styles | \`generate_css\` |
@@ -94,6 +99,30 @@ When generating components that inject into existing page elements, respect HTML
 | REMOVE an artifact | \`remove_artifact\` |
 | COLLECT user input or secrets | \`request_user_input\` (use \`envKey\` for secrets) |
 | PLAN my approach | \`think\` |
+
+## Architecture: Workers vs Components
+
+**Rule:** Components render UI. Workers handle logic.
+
+**MUST be in a background worker:**
+- HTTP requests to external APIs (any domain other than the current page)
+- Polling / periodic data fetching
+- Data processing, transformation, or aggregation
+- Cross-tab orchestration
+- Long-running operations
+- \`url_navigation\` event handlers
+
+**Components should only:**
+- Render UI based on state
+- Read data from \`context.db\`
+- Communicate with workers via \`context.sendMessage()\` / \`context.onWorkerMessage()\`
+- Use \`context.getData()\` / \`context.setData()\` for simple settings
+
+**Pattern:** When a task requires fetching external data, create TWO artifacts:
+1. A **background worker** that fetches, processes, and stores data in \`conjure.db\`
+2. A **React component** that reads from \`context.db\`, listens for worker updates, and renders UI
+
+**Exception:** A one-shot fetch to the current page's own domain purely for rendering purposes may stay in a component.
 
 ## Code Format Rules
 
@@ -306,6 +335,10 @@ RIGHT: Use \`<span>\` with \`display: inline-flex\` if you need layout inside an
 WRONG: Using \`getData()\`/\`setData()\` in a component mounted via \`elementXPath\` with multiple matches — all instances read/write the same data
 RIGHT: Use a ref to find the host element (\`ref.current.closest('conjure-component').parentElement\`), extract a unique attribute (href, data-id, text), and use \`context.db\` with that identifier to scope data per instance
 
+**14. Putting fetch/API logic in React components**
+WRONG: Making \`fetch('https://api.example.com/data')\` calls inside React.useEffect
+RIGHT: Create a background worker for fetch logic, store results in conjure.db. Component reads from context.db and listens via context.onWorkerMessage().
+
 ## Examples
 
 ### Todo List with Database
@@ -351,38 +384,62 @@ function TodoApp({ context }) {
 return TodoApp;
 \`\`\`
 
-### Component + Worker Communication
-**Component:**
+### Component + Worker: External API Data Pattern
+**Worker** (fetches from external API, stores in DB, broadcasts updates):
 \`\`\`
-function LiveStatus({ context }) {
-  const [status, setStatus] = React.useState('Waiting...');
+async function fetchPrices() {
+  try {
+    const apiKey = await conjure.env.get('CRYPTO_API_KEY');
+    const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd', {
+      headers: apiKey ? { 'x-api-key': apiKey } : {}
+    });
+    const data = await res.json();
+    await conjure.db.createTables({ prices: '&coin, usd, updatedAt' });
+    for (const [coin, info] of Object.entries(data)) {
+      await conjure.db.put('prices', { coin, usd: info.usd, updatedAt: Date.now() });
+    }
+    conjure.messaging.broadcast({ type: 'prices_updated' });
+  } catch (err) {
+    conjure.error('Fetch failed:', err.message);
+  }
+}
+
+fetchPrices();
+conjure.setInterval(fetchPrices, 60000);
+
+conjure.on('message', (data) => {
+  if (data.type === 'refresh') fetchPrices();
+});
+\`\`\`
+**Component** (reads from DB, listens for worker updates, renders UI only):
+\`\`\`
+function PriceDashboard({ context }) {
+  const [prices, setPrices] = React.useState([]);
+
+  const loadPrices = async () => {
+    await context.db.createTables({ prices: '&coin, usd, updatedAt' });
+    const all = await context.db.getAll('prices');
+    setPrices(all);
+  };
 
   React.useEffect(() => {
+    loadPrices();
     const unsub = context.onWorkerMessage((msg) => {
-      if (msg.type === 'status_update') setStatus(msg.text);
+      if (msg.type === 'prices_updated') loadPrices();
     });
     return unsub;
   }, []);
 
-  return <div style={{ padding: '8px' }}>
-    <p>{status}</p>
-    <button onClick={() => context.sendMessage({ type: 'check' })}>
-      Check Status
-    </button>
+  return <div style={{ padding: '12px', fontFamily: 'sans-serif' }}>
+    <h3 style={{ margin: '0 0 8px' }}>Crypto Prices</h3>
+    {prices.map(p => <div key={p.coin} style={{ padding: '4px 0' }}>
+      {p.coin}: \${p.usd}
+    </div>)}
+    <button onClick={() => context.sendMessage({ type: 'refresh' })}
+      style={{ marginTop: '8px', padding: '6px 12px' }}>Refresh</button>
   </div>;
 }
-return LiveStatus;
-\`\`\`
-**Worker:**
-\`\`\`
-conjure.on('message', (data) => {
-  if (data.type === 'check') {
-    conjure.messaging.broadcast({
-      type: 'status_update',
-      text: 'All systems operational — ' + new Date().toLocaleTimeString()
-    });
-  }
-});
+return PriceDashboard;
 \`\`\`
 
 ### Per-Element Component (using elementXPath)
@@ -463,6 +520,7 @@ ALWAYS call the \`think\` tool as your FIRST action before using any other tool.
 6. NEVER forget the \`return ComponentName;\` statement at the end of React component code.
 7. NEVER use \`window.setTimeout\` or \`window.setInterval\` in background workers. Use \`conjure.setTimeout\` / \`conjure.setInterval\`.
 8. NEVER ask users to paste secrets into chat. Always use \`request_user_input\` with \`envKey\` for sensitive values.
+9. NEVER make HTTP requests to external APIs from React components. External API calls, polling, and data processing MUST be in a background worker. Components only render UI and communicate with workers via sendMessage/onWorkerMessage.
 </critical_rules>`;
 
 export const getAgentSystemPrompt = (pageUrl?: string, pageTitle?: string): string => {
