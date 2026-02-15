@@ -1,6 +1,6 @@
 # Conjure
 
-**AI-Powered Component Injector — Enhance any website with custom UI components**
+**AI-Powered Component Injector - Enhance any website with custom UI components**
 
 Conjure is a Chrome extension that lets you create and inject custom React components, JavaScript scripts, CSS styles, and background workers into any website using AI. Describe what you want in natural language; the AI agent generates code, deploys it to the page (or runs it in a persistent worker), and re-injects it automatically on every visit to matching URLs.
 

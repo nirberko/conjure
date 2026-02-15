@@ -1,6 +1,6 @@
 import { loadComponentsForPage } from '../../component-loader.js';
 import { activate as activatePicker } from '../../element-picker.js';
-import { injectArtifact, removeArtifact, isArtifactInjected } from '../../injector.js';
+import { injectArtifact, removeArtifact } from '../../injector.js';
 import type { Artifact } from '@extension/shared';
 
 console.log('[Conjure] Content script loaded');
