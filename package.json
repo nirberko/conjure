@@ -24,7 +24,6 @@
     "lint": "turbo lint --continue",
     "lint:fix": "turbo lint:fix --continue",
     "format": "turbo format --continue -- --cache --cache-location node_modules/.cache/.prettiercache",
-    "prepare": "husky",
     "update-version": "bash bash-scripts/update_version.sh",
     "copy-env": "bash bash-scripts/copy_env.sh",
     "set-global-env": "bash bash-scripts/set_global_env.sh",
@@ -67,9 +66,7 @@
     "fflate": "^0.8.2",
     "globals": "^16.1.0",
     "happy-dom": "^20.6.1",
-    "husky": "^9.1.7",
     "jiti": "^2.4.2",
-    "lint-staged": "^16.0.0",
     "postcss": "^8.5.3",
     "postcss-load-config": "^6.0.1",
     "prettier": "^3.5.3",
@@ -88,15 +85,7 @@
     "semantic-release": "^24.2.3",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@semantic-release/exec": "^7.0.3",
-"@commitlint/cli": "^19.8.0",
-    "@commitlint/config-conventional": "^19.8.0"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx,json}": [
-      "prettier --write",
-      "eslint --fix"
-    ]
+    "@semantic-release/exec": "^7.0.3"
   },
   "packageManager": "pnpm@10.11.0",
   "engines": {
