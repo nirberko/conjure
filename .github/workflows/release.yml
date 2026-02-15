@@ -23,7 +23,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: pnpm
-      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: 0
       - run: pnpm lint
       - run: pnpm type-check
       - run: pnpm test
@@ -41,7 +43,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: pnpm
-      - run: pnpm install --frozen-lockfile --prefer-offline
+      - run: pnpm install --frozen-lockfile
+        env:
+          HUSKY: 0
       - name: Run semantic-release
         id: semantic-release
         env:
