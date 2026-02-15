@@ -1,5 +1,5 @@
 name: Setup Node.js Environment
-description: Setup pnpm + Node.js with caching and install dependencies
+description: Setup pnpm + Node.js and install dependencies
 
 runs:
   using: composite
@@ -8,7 +8,6 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
-        cache: pnpm
     - run: pnpm install --frozen-lockfile --ignore-scripts
       shell: bash
     - run: pnpm run --if-present postinstall
