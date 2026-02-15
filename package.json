@@ -29,7 +29,7 @@
     "copy-env": "bash bash-scripts/copy_env.sh",
     "set-global-env": "bash bash-scripts/set_global_env.sh",
     "module-manager": "pnpm -F module-manager start",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "postinstall": "pnpm copy-env"
   },
   "dependencies": {
