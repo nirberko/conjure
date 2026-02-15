@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState, useCallback } from 'react';
 
 interface DatabaseRowEditorProps {
@@ -77,7 +78,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
         case 'number': {
           const n = Number(raw);
           if (raw !== '' && isNaN(n)) {
-            setError(`Field "${key}" is not a valid number`);
+            setError(t('dbEditorInvalidNumber', key));
             return;
           }
           data[key] = raw === '' ? 0 : n;
@@ -90,7 +91,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
           try {
             data[key] = JSON.parse(raw);
           } catch {
-            setError(`Field "${key}" contains invalid JSON`);
+            setError(t('dbEditorInvalidJson', key));
             return;
           }
           break;
@@ -115,7 +116,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
         role="presentation"
         onClick={e => e.stopPropagation()}>
         <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-white">
-          {isInsert ? 'Insert Row' : 'Edit Row'}
+          {isInsert ? t('dbEditorInsertTitle') : t('dbEditorEditTitle')}
         </h3>
 
         <div className="space-y-3">
@@ -193,14 +194,14 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
             value={newFieldName}
             onChange={e => setNewFieldName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addField()}
-            placeholder="New field name..."
+            placeholder={t('dbEditorNewFieldPlaceholder')}
             className="minimal-input flex-1 font-mono text-[11px]"
           />
           <button
             onClick={addField}
             disabled={!newFieldName.trim()}
             className="text-primary font-mono text-[10px] uppercase tracking-widest disabled:opacity-30">
-            Add
+            {t('commonAdd')}
           </button>
         </div>
 
@@ -211,12 +212,12 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
           <button
             onClick={handleSave}
             className="text-primary font-mono text-[10px] uppercase tracking-widest underline-offset-4 transition-all hover:underline">
-            {isInsert ? 'Insert' : 'Save'}
+            {isInsert ? t('commonInsert') : t('commonSave')}
           </button>
           <button
             onClick={onCancel}
             className="font-mono text-[10px] uppercase tracking-widest text-slate-500 underline-offset-4 transition-all hover:text-slate-300 hover:underline">
-            Cancel
+            {t('commonCancel')}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { DatabaseRowEditor } from './DatabaseRowEditor';
 import { DatabaseTableView } from './DatabaseTableView';
 import { useDatabaseBrowser } from '../hooks/useDatabaseBrowser';
+import { t } from '@extension/i18n';
 import { useState, useCallback } from 'react';
 
 interface DatabaseBrowserProps {
@@ -60,21 +61,21 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
       {/* Table Selector */}
       {loadingTables ? (
         <div className="py-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-          Loading tables...
+          {t('dbLoadingTables')}
         </div>
       ) : (
         <div>
           <label
             htmlFor="db-table-select"
             className="mb-1 block font-mono text-[9px] uppercase tracking-widest text-slate-600">
-            Table
+            {t('dbTableLabel')}
           </label>
           <select
             id="db-table-select"
             value={selectedTable}
             onChange={e => selectTable(e.target.value)}
             className="bg-background-dark border-terminal-border w-full border px-3 py-2 font-mono text-[11px] text-slate-300">
-            <option value="">Select a table...</option>
+            <option value="">{t('dbTableSelectPlaceholder')}</option>
             {tables.map(t => (
               <option key={t.name} value={t.name}>
                 {t.name} ({t.count})
@@ -91,16 +92,16 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
             onClick={handleInsert}
             className="text-primary flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest transition-colors hover:text-white">
             <span className="material-symbols-outlined text-[14px]">add</span>
-            Insert
+            {t('dbInsertAction')}
           </button>
           <button
             onClick={refresh}
             className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300">
             <span className="material-symbols-outlined text-[14px]">refresh</span>
-            Refresh
+            {t('dbRefreshAction')}
           </button>
           <span className="ml-auto font-mono text-[9px] text-slate-600">
-            {totalCount} row{totalCount !== 1 ? 's' : ''}
+            {totalCount === 1 ? t('dbRowCountOne', String(totalCount)) : t('dbRowCountOther', String(totalCount))}
           </span>
         </div>
       )}
@@ -109,7 +110,7 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
       {selectedTable &&
         (loadingRows ? (
           <div className="py-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-            Loading rows...
+            {t('dbLoadingRows')}
           </div>
         ) : (
           <DatabaseTableView rows={rows} primaryKey={primaryKey} onEdit={handleEdit} onDelete={handleDelete} />
@@ -122,16 +123,16 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
             onClick={() => setPage(Math.max(0, page - 1))}
             disabled={page === 0}
             className="font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300 disabled:opacity-30">
-            &lt; Prev
+            {t('dbPaginationPrev')}
           </button>
           <span className="font-mono text-[10px] text-slate-500">
-            {page + 1} / {totalPages}
+            {t('dbPaginationPage', [String(page + 1), String(totalPages)])}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
             disabled={page >= totalPages - 1}
             className="font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300 disabled:opacity-30">
-            Next &gt;
+            {t('dbPaginationNext')}
           </button>
         </div>
       )}

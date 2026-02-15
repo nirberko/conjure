@@ -1,4 +1,5 @@
 import { CodeBlock } from './CodeBlock';
+import { t } from '@extension/i18n';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { WorkerStatus } from './ArtifactCard';
 import type { Artifact, WorkerLog } from '@extension/shared';
@@ -119,14 +120,18 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
     return true;
   });
 
-  const statusLabel = isRunning ? 'Running' : isError ? 'Error' : 'Stopped';
+  const statusLabel = isRunning
+    ? t('workerStatusRunning')
+    : isError
+      ? t('workerStatusError')
+      : t('workerStatusStopped');
   const statusColor = isRunning ? 'text-emerald-500' : isError ? 'text-red-500' : 'text-slate-500';
   const statusDot = isRunning ? 'bg-emerald-500 animate-pulse' : isError ? 'bg-red-500' : 'bg-slate-600';
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: 'logs', label: 'Logs' },
-    { id: 'code', label: 'Code' },
-    { id: 'versions', label: 'Versions' },
+    { id: 'logs', label: t('workerTabLogs') },
+    { id: 'code', label: t('workerTabCode') },
+    { id: 'versions', label: t('workerTabVersions') },
   ];
 
   return (
@@ -140,7 +145,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
             </button>
             <div className="flex items-center gap-2">
               <span className="sharp-badge border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] text-emerald-400">
-                WORKER
+                {t('workerBadge')}
               </span>
               <span className="text-[12px] font-medium text-slate-200">{artifact.name}</span>
             </div>
@@ -153,9 +158,9 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
 
         {/* Metadata bar */}
         <div className="mt-2 flex items-center gap-4 font-mono text-[9px] text-slate-600">
-          <span>PID: {artifact.id.slice(-4)}</span>
-          <span>Uptime: {uptime}</span>
-          <span>Ext: {artifact.extensionId.slice(0, 8)}</span>
+          <span>{t('workerPidLabel', artifact.id.slice(-4))}</span>
+          <span>{t('workerUptimeLabel', uptime)}</span>
+          <span>{t('workerExtLabel', artifact.extensionId.slice(0, 8))}</span>
         </div>
 
         {/* Controls */}
@@ -165,19 +170,19 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
               <button
                 onClick={handleReload}
                 className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
-                Reload
+                {t('commonReload')}
               </button>
               <button
                 onClick={() => onStopWorker(artifact.extensionId)}
                 className="font-mono text-[10px] uppercase tracking-tighter text-red-500/70 underline-offset-4 transition-all hover:text-red-400 hover:underline">
-                Stop
+                {t('commonStop')}
               </button>
             </>
           ) : (
             <button
               onClick={() => onStartWorker(artifact)}
               className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
-              Start
+              {t('commonStart')}
             </button>
           )}
         </div>
@@ -220,9 +225,9 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
                 value={levelFilter}
                 onChange={e => setLevelFilter(e.target.value as LogLevel)}
                 className="border-terminal-border rounded border bg-black/40 px-2 py-0.5 font-mono text-[10px] text-slate-400 outline-none">
-                <option value="all">All</option>
-                <option value="log">Log</option>
-                <option value="error">Error</option>
+                <option value="all">{t('workerLogFilterAll')}</option>
+                <option value="log">{t('workerLogFilterLog')}</option>
+                <option value="error">{t('workerLogFilterError')}</option>
               </select>
               <div className="border-terminal-border flex flex-1 items-center gap-1 border bg-black/40 px-2 py-0.5">
                 <span className="material-symbols-outlined text-[12px] text-slate-600">search</span>
@@ -230,14 +235,14 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
                   type="text"
                   value={searchFilter}
                   onChange={e => setSearchFilter(e.target.value)}
-                  placeholder="Filter logs..."
+                  placeholder={t('workerLogSearchPlaceholder')}
                   className="w-full bg-transparent font-mono text-[10px] text-slate-400 placeholder-slate-700 outline-none"
                 />
               </div>
               <button
                 onClick={handleClearLogs}
                 className="font-mono text-[9px] uppercase tracking-wider text-slate-600 transition-colors hover:text-slate-400">
-                Clear
+                {t('commonClear')}
               </button>
             </div>
 
@@ -248,7 +253,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
               className="flex-1 overflow-y-auto bg-black/20 p-2 font-mono text-[10px]">
               {filteredLogs.length === 0 ? (
                 <div className="py-8 text-center text-[10px] uppercase tracking-widest text-slate-700">
-                  {logs.length === 0 ? 'No logs yet' : 'No matching logs'}
+                  {logs.length === 0 ? t('workerLogEmpty') : t('workerLogNoMatch')}
                 </div>
               ) : (
                 filteredLogs.map((log, i) => (
@@ -272,7 +277,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
             {/* Log footer */}
             <div className="border-terminal-border border-t bg-black/40 px-3 py-1">
               <span className="font-mono text-[9px] text-slate-700">
-                {filteredLogs.length} / {logs.length} entries
+                {t('workerLogEntryCount', [String(filteredLogs.length), String(logs.length)])}
               </span>
             </div>
           </div>
@@ -288,7 +293,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
           <div className="flex h-full flex-col">
             {artifact.codeVersions.length === 0 ? (
               <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-700">
-                No version history
+                {t('workerVersionsEmpty')}
               </div>
             ) : (
               <>
@@ -313,7 +318,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
                           <span className="font-mono text-[10px] text-slate-400">v{actualIdx + 1}</span>
                           {isCurrent && (
                             <span className="sharp-badge bg-primary/10 text-primary border-primary/30 border px-1.5 py-0 font-mono text-[8px]">
-                              CURRENT
+                              {t('workerVersionCurrent')}
                             </span>
                           )}
                         </div>

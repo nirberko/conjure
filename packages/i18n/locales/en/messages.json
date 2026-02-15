@@ -24,5 +24,191 @@
   },
   "displayErrorReset": {
     "message": "Run Again"
-  }
+  },
+
+  "commonCancel": { "message": "Cancel" },
+  "commonSave": { "message": "Save" },
+  "commonDelete": { "message": "Delete" },
+  "commonEdit": { "message": "Edit" },
+  "commonStart": { "message": "Start" },
+  "commonStop": { "message": "Stop" },
+  "commonReload": { "message": "Reload" },
+  "commonView": { "message": "View" },
+  "commonAdd": { "message": "Add" },
+  "commonRefresh": { "message": "Refresh" },
+  "commonYes": { "message": "Yes" },
+  "commonNo": { "message": "No" },
+  "commonCreate": { "message": "Create" },
+  "commonInsert": { "message": "Insert" },
+  "commonClear": { "message": "Clear" },
+
+  "chatTimeFewSecondsAgo": { "message": "a few seconds ago" },
+  "chatTimeSecondsAgo": {
+    "message": "$COUNT$ seconds ago",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "chatTimeOneMinuteAgo": { "message": "1 minute ago" },
+  "chatTimeMinutesAgo": {
+    "message": "$COUNT$ minutes ago",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "chatTimeOneHourAgo": { "message": "1 hour ago" },
+  "chatTimeHoursAgo": {
+    "message": "$COUNT$ hours ago",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "chatTimeOneDayAgo": { "message": "1 day ago" },
+  "chatTimeDaysAgo": {
+    "message": "$COUNT$ days ago",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "chatToolNoArguments": { "message": "No arguments" },
+  "chatToolResult": { "message": "Result" },
+  "chatUserTitle": { "message": "You" },
+  "chatAgentName": { "message": "Conjure" },
+  "chatLoading": { "message": "Loading conversation..." },
+  "chatEmptyState": { "message": "Ready to initialize. Describe what you want to build. The agent will plan, generate, and deploy artifacts for you." },
+  "chatPlaceholder": { "message": "Ask or command..." },
+
+  "artifactListLoading": { "message": "Loading artifacts..." },
+  "artifactListHeader": { "message": "Active Processes" },
+  "artifactListEmpty": { "message": "No artifacts yet. Use the Chat tab to ask the agent to create components, scripts, or styles." },
+  "artifactListNodeActive": { "message": "Node Active" },
+
+  "artifactTypeReact": { "message": "REACT" },
+  "artifactTypeScript": { "message": "SCRIPT" },
+  "artifactTypeCss": { "message": "CSS" },
+  "artifactTypeWorker": { "message": "WORKER" },
+  "artifactStatusTerminated": { "message": "Terminated" },
+  "artifactStatusRunning": { "message": "Running" },
+  "artifactActionRestart": { "message": "Restart" },
+  "artifactActionHide": { "message": "Hide" },
+  "artifactActionLogs": { "message": "Logs" },
+
+  "extensionListLoading": { "message": "Loading extensions..." },
+  "extensionListNewButton": { "message": "New Extension" },
+  "extensionListNamePlaceholder": { "message": "Extension name..." },
+  "extensionListUrlPlaceholder": { "message": "URL pattern (e.g. https://*.github.com/*)" },
+  "extensionListDescPlaceholder": { "message": "Description (optional)" },
+  "extensionListEmpty": { "message": "No extensions yet. Create one to get started." },
+
+  "extensionDetailTabChat": { "message": "Chat" },
+  "extensionDetailTabArtifacts": { "message": "Artifacts" },
+  "extensionDetailTabDatabase": { "message": "Database" },
+  "extensionDetailTabEnv": { "message": "Env" },
+
+  "providerLabelAiProvider": { "message": "AI Provider" },
+  "providerLabelApiKey": { "message": "API Access Key" },
+  "providerLocalStorageNote": { "message": "ENCRYPTED LOCAL STORAGE ACTIVE" },
+  "providerLabelRecursionLimit": { "message": "Agent Recursion Limit" },
+  "providerRecursionLimitHelp": { "message": "Max agent steps (10\u2013200). Increase if you hit recursion limit errors." },
+  "providerLabelModel": { "message": "Neural Engine Selection" },
+  "providerConfigNote": { "message": "Configuration updates are applied immediately to active injection scripts and the AI generation bridge." },
+  "providerSaveButton": { "message": "Commit Changes" },
+  "providerSaved": { "message": "Changes Committed" },
+  "providerDocs": { "message": "Docs" },
+  "providerSystemReady": { "message": "System Ready" },
+  "providerSecurity": { "message": "Security" },
+
+  "dbLoadingTables": { "message": "Loading tables..." },
+  "dbTableLabel": { "message": "Table" },
+  "dbTableSelectPlaceholder": { "message": "Select a table..." },
+  "dbInsertAction": { "message": "Insert" },
+  "dbRefreshAction": { "message": "Refresh" },
+  "dbRowCountOne": {
+    "message": "$COUNT$ row",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "dbRowCountOther": {
+    "message": "$COUNT$ rows",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "dbLoadingRows": { "message": "Loading rows..." },
+  "dbPaginationPrev": { "message": "< Prev" },
+  "dbPaginationNext": { "message": "Next >" },
+  "dbPaginationPage": {
+    "message": "$CURRENT$ / $TOTAL$",
+    "placeholders": {
+      "current": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+
+  "dbEditorInsertTitle": { "message": "Insert Row" },
+  "dbEditorEditTitle": { "message": "Edit Row" },
+  "dbEditorNewFieldPlaceholder": { "message": "New field name..." },
+  "dbEditorInvalidNumber": {
+    "message": "Field \"$FIELD$\" is not a valid number",
+    "placeholders": { "field": { "content": "$1" } }
+  },
+  "dbEditorInvalidJson": {
+    "message": "Field \"$FIELD$\" contains invalid JSON",
+    "placeholders": { "field": { "content": "$1" } }
+  },
+
+  "dbTableEmpty": { "message": "No rows in this table" },
+  "dbTableConfirmDelete": { "message": "Confirm?" },
+
+  "envLoading": { "message": "Loading environment variables..." },
+  "envTitle": { "message": "Environment Variables" },
+  "envAddButton": { "message": "+ Add" },
+  "envKeyPlaceholder": { "message": "KEY_NAME" },
+  "envValuePlaceholder": { "message": "value" },
+  "envEmpty": { "message": "No environment variables set" },
+
+  "agentThinking": { "message": "Thinking..." },
+  "agentWorking": { "message": "Agent is working..." },
+
+  "thinkingDurationOne": { "message": "Thought for 1s" },
+  "thinkingDuration": {
+    "message": "Thought for $SECONDS$s",
+    "placeholders": { "seconds": { "content": "$1" } }
+  },
+
+  "formFieldRequired": { "message": "This field is required" },
+
+  "workerBadge": { "message": "WORKER" },
+  "workerStatusRunning": { "message": "Running" },
+  "workerStatusError": { "message": "Error" },
+  "workerStatusStopped": { "message": "Stopped" },
+  "workerTabLogs": { "message": "Logs" },
+  "workerTabCode": { "message": "Code" },
+  "workerTabVersions": { "message": "Versions" },
+  "workerLogFilterAll": { "message": "All" },
+  "workerLogFilterLog": { "message": "Log" },
+  "workerLogFilterError": { "message": "Error" },
+  "workerLogSearchPlaceholder": { "message": "Filter logs..." },
+  "workerLogEmpty": { "message": "No logs yet" },
+  "workerLogNoMatch": { "message": "No matching logs" },
+  "workerLogEntryCount": {
+    "message": "$FILTERED$ / $TOTAL$ entries",
+    "placeholders": {
+      "filtered": { "content": "$1" },
+      "total": { "content": "$2" }
+    }
+  },
+  "workerVersionsEmpty": { "message": "No version history" },
+  "workerVersionCurrent": { "message": "CURRENT" },
+  "workerPidLabel": {
+    "message": "PID: $PID$",
+    "placeholders": { "pid": { "content": "$1" } }
+  },
+  "workerUptimeLabel": {
+    "message": "Uptime: $UPTIME$",
+    "placeholders": { "uptime": { "content": "$1" } }
+  },
+  "workerExtLabel": {
+    "message": "Ext: $EXT$",
+    "placeholders": { "ext": { "content": "$1" } }
+  },
+
+  "sidePanelTitle": { "message": "Conjure" },
+  "sidePanelTabExtensions": { "message": "Extensions" },
+  "sidePanelTabSettings": { "message": "Settings" },
+  "sidePanelStatusReady": { "message": "Ready" },
+
+  "popupTitle": { "message": "Conjure" },
+  "popupOpenSidePanel": { "message": "Open Side Panel" },
+
+  "errorStackTraceLabel": { "message": "Stack trace" }
 }

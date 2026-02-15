@@ -1,5 +1,6 @@
 import { ArtifactCard } from './ArtifactCard';
 import { WorkerDetail } from './WorkerDetail';
+import { t } from '@extension/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import type { WorkerStatus } from './ArtifactCard';
 import type { Artifact } from '@extension/shared';
@@ -67,7 +68,7 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
   if (loading) {
     return (
       <div className="p-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-        Loading artifacts...
+        {t('artifactListLoading')}
       </div>
     );
   }
@@ -76,11 +77,13 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
     <div className="flex h-full flex-col">
       <main className="flex-1 overflow-y-auto py-2">
         {/* Section header */}
-        <div className="px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-600">Active Processes</div>
+        <div className="px-3 py-2 font-mono text-[10px] uppercase tracking-widest text-slate-600">
+          {t('artifactListHeader')}
+        </div>
 
         {artifacts.length === 0 ? (
           <div className="px-4 py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-            No artifacts yet. Use the Chat tab to ask the agent to create components, scripts, or styles.
+            {t('artifactListEmpty')}
           </div>
         ) : (
           <div className="space-y-px">
@@ -104,7 +107,9 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="pulse-dot h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Node Active</span>
+              <span className="font-mono text-[9px] uppercase tracking-wider text-slate-500">
+                {t('artifactListNodeActive')}
+              </span>
             </div>
             <span className="font-mono text-[9px] text-slate-700">v4.0.1-RC</span>
           </div>

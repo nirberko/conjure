@@ -9,7 +9,7 @@ export const ErrorStackTraceList = ({ error }: { error?: Error }) => (
           <p className="break-all font-mono text-red-700">{error?.message || t('displayErrorUnknownErrorInfo')}</p>
           {error?.stack && (
             <details className="mt-3">
-              <summary className="cursor-pointer text-sm text-red-700">Stack trace</summary>
+              <summary className="cursor-pointer text-sm text-red-700">{t('errorStackTraceLabel')}</summary>
               <pre className="mt-2 overflow-auto p-2 text-xs text-red-800">{error?.stack}</pre>
             </details>
           )}

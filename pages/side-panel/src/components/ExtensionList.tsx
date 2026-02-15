@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState, useEffect, useCallback } from 'react';
 import type { Extension } from '@extension/shared';
 
@@ -106,7 +107,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
   if (loading) {
     return (
       <div className="p-4 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-        Loading extensions...
+        {t('extensionListLoading')}
       </div>
     );
   }
@@ -122,7 +123,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
             add
           </span>
           <span className="group-hover:text-primary ml-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-            New Extension
+            {t('extensionListNewButton')}
           </span>
         </button>
       )}
@@ -134,7 +135,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
             type="text"
             value={newName}
             onChange={e => setNewName(e.target.value)}
-            placeholder="Extension name..."
+            placeholder={t('extensionListNamePlaceholder')}
             className="minimal-input"
             // eslint-disable-next-line jsx-a11y/no-autofocus
             autoFocus
@@ -143,14 +144,14 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
             type="text"
             value={newUrl}
             onChange={e => setNewUrl(e.target.value)}
-            placeholder="URL pattern (e.g. https://*.github.com/*)"
+            placeholder={t('extensionListUrlPlaceholder')}
             className="minimal-input"
           />
           <input
             type="text"
             value={newDesc}
             onChange={e => setNewDesc(e.target.value)}
-            placeholder="Description (optional)"
+            placeholder={t('extensionListDescPlaceholder')}
             className="minimal-input"
           />
           <div className="flex gap-4">
@@ -158,12 +159,12 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
               onClick={handleCreate}
               disabled={!newName.trim() || !newUrl.trim()}
               className="text-primary font-mono text-[10px] uppercase tracking-widest underline-offset-4 transition-all hover:underline disabled:no-underline disabled:opacity-30">
-              Create
+              {t('commonCreate')}
             </button>
             <button
               onClick={() => setShowCreate(false)}
               className="font-mono text-[10px] uppercase tracking-widest text-slate-500 underline-offset-4 transition-all hover:text-slate-300 hover:underline">
-              Cancel
+              {t('commonCancel')}
             </button>
           </div>
         </div>
@@ -172,7 +173,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
       {/* Extension cards */}
       {extensions.length === 0 && !showCreate && (
         <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-          No extensions yet. Create one to get started.
+          {t('extensionListEmpty')}
         </div>
       )}
 
@@ -229,13 +230,13 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
                 <button
                   onClick={() => onSelect(ext)}
                   className="text-slate-600 transition-colors hover:text-white"
-                  title="Edit">
+                  title={t('commonEdit')}>
                   <span className="material-symbols-outlined text-[16px]">edit_note</span>
                 </button>
                 <button
                   onClick={() => onDelete(ext.id)}
                   className="text-slate-600 transition-colors hover:text-red-400"
-                  title="Delete">
+                  title={t('commonDelete')}>
                   <span className="material-symbols-outlined text-[16px]">delete</span>
                 </button>
               </div>

@@ -46,6 +46,8 @@
   },
   "devDependencies": {
     "@extension/tsconfig": "workspace:*",
+    "@types/chrome": "^0.0.323",
+    "@types/node": "^22.15.21",
     "@types/uuid": "^10.0.0",
     "type-fest": "^4.41.0"
   }

@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState, useCallback } from 'react';
 
 interface DatabaseTableViewProps {
@@ -122,7 +123,7 @@ export const DatabaseTableView = ({ rows, primaryKey, onEdit, onDelete }: Databa
   if (rows.length === 0) {
     return (
       <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-        No rows in this table
+        {t('dbTableEmpty')}
       </div>
     );
   }
@@ -153,27 +154,29 @@ export const DatabaseTableView = ({ rows, primaryKey, onEdit, onDelete }: Databa
               <button
                 onClick={() => onEdit(row)}
                 className="text-primary font-mono text-[9px] uppercase tracking-widest transition-colors hover:text-white">
-                Edit
+                {t('commonEdit')}
               </button>
               {confirmDeleteKey === keyStr ? (
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-red-400">Confirm?</span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-red-400">
+                    {t('dbTableConfirmDelete')}
+                  </span>
                   <button
                     onClick={() => handleDelete(key)}
                     className="font-mono text-[9px] uppercase tracking-widest text-red-400 transition-colors hover:text-red-300">
-                    Yes
+                    {t('commonYes')}
                   </button>
                   <button
                     onClick={() => setConfirmDeleteKey(null)}
                     className="font-mono text-[9px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300">
-                    No
+                    {t('commonNo')}
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => handleDelete(key)}
                   className="font-mono text-[9px] uppercase tracking-widest text-slate-500 transition-colors hover:text-red-400">
-                  Delete
+                  {t('commonDelete')}
                 </button>
               )}
             </div>

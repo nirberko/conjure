@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState } from 'react';
 import type { UserInputField } from '@extension/shared';
 
@@ -37,7 +38,7 @@ export const UserInputForm = ({ fields, title, submitLabel = 'Submit', onSubmit,
     const newErrors: Record<string, string> = {};
     for (const field of fields) {
       if (field.required && !values[field.name]?.trim()) {
-        newErrors[field.name] = 'This field is required';
+        newErrors[field.name] = t('formFieldRequired');
       }
     }
     if (Object.keys(newErrors).length > 0) {
@@ -88,7 +89,7 @@ export const UserInputForm = ({ fields, title, submitLabel = 'Submit', onSubmit,
           type="button"
           onClick={onCancel}
           className="font-mono text-xs text-slate-500 transition-colors hover:text-slate-300">
-          Cancel
+          {t('commonCancel')}
         </button>
         <button
           type="submit"

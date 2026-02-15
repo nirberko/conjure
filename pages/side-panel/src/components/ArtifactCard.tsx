@@ -1,4 +1,5 @@
 import { CodeBlock } from './CodeBlock';
+import { t } from '@extension/i18n';
 import { useState } from 'react';
 import type { Artifact } from '@extension/shared';
 
@@ -18,19 +19,19 @@ interface ArtifactCardProps {
 
 const TYPE_BADGES: Record<string, { label: string; badgeClass: string }> = {
   'react-component': {
-    label: 'REACT',
+    label: t('artifactTypeReact'),
     badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
   },
   'js-script': {
-    label: 'SCRIPT',
+    label: t('artifactTypeScript'),
     badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
   },
   css: {
-    label: 'CSS',
+    label: t('artifactTypeCss'),
     badgeClass: 'bg-pink-500/10 text-pink-400 border-pink-500/30',
   },
   'background-worker': {
-    label: 'WORKER',
+    label: t('artifactTypeWorker'),
     badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
   },
 };
@@ -79,7 +80,9 @@ export const ArtifactCard = ({
             </div>
             <div className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[12px] text-red-500">warning</span>
-              <span className="font-mono text-[9px] uppercase tracking-widest text-red-500">Terminated</span>
+              <span className="font-mono text-[9px] uppercase tracking-widest text-red-500">
+                {t('artifactStatusTerminated')}
+              </span>
             </div>
           </div>
 
@@ -98,7 +101,7 @@ export const ArtifactCard = ({
                 onStartWorker?.(artifact);
               }}
               className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
-              Restart
+              {t('artifactActionRestart')}
             </button>
             <button
               onClick={e => {
@@ -106,7 +109,7 @@ export const ArtifactCard = ({
                 setShowCode(!showCode);
               }}
               className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-slate-300 hover:underline">
-              {showCode ? 'Hide' : 'Logs'}
+              {showCode ? t('artifactActionHide') : t('artifactActionLogs')}
             </button>
           </div>
         </div>
@@ -126,7 +129,9 @@ export const ArtifactCard = ({
               {isWorker && isRunning && (
                 <div className="flex items-center gap-1.5">
                   <div className="pulse-dot h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-500">Running</span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-500">
+                    {t('artifactStatusRunning')}
+                  </span>
                 </div>
               )}
             </div>
@@ -149,7 +154,7 @@ export const ArtifactCard = ({
                             onStartWorker?.(artifact);
                           }}
                           className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
-                          Reload
+                          {t('commonReload')}
                         </button>
                         <button
                           onClick={e => {
@@ -157,7 +162,7 @@ export const ArtifactCard = ({
                             onStopWorker?.(artifact.extensionId);
                           }}
                           className="font-mono text-[10px] uppercase tracking-tighter text-red-500/70 underline-offset-4 transition-all hover:text-red-400 hover:underline">
-                          Stop
+                          {t('commonStop')}
                         </button>
                       </>
                     ) : (
@@ -167,7 +172,7 @@ export const ArtifactCard = ({
                           onStartWorker?.(artifact);
                         }}
                         className="font-mono text-[10px] uppercase tracking-tighter text-emerald-400 underline-offset-4 transition-all hover:text-emerald-300 hover:underline">
-                        Start
+                        {t('commonStart')}
                       </button>
                     )}
                     <button
@@ -176,7 +181,7 @@ export const ArtifactCard = ({
                         onViewWorker?.(artifact);
                       }}
                       className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
-                      View
+                      {t('commonView')}
                     </button>
                   </div>
                   {isRunning && (

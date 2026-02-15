@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState, useEffect, useCallback } from 'react';
 
 interface EnvManagerProps {
@@ -97,7 +98,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
   if (loading) {
     return (
       <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-        Loading environment variables...
+        {t('envLoading')}
       </div>
     );
   }
@@ -105,12 +106,12 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
   return (
     <div className="h-full space-y-4 overflow-y-auto p-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[9px] uppercase tracking-widest text-slate-600">Environment Variables</span>
+        <span className="font-mono text-[9px] uppercase tracking-widest text-slate-600">{t('envTitle')}</span>
         {!adding && (
           <button
             onClick={() => setAdding(true)}
             className="text-primary font-mono text-[10px] uppercase tracking-widest transition-colors hover:text-white">
-            + Add
+            {t('envAddButton')}
           </button>
         )}
       </div>
@@ -120,14 +121,14 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
           <input
             value={newKey}
             onChange={e => setNewKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
-            placeholder="KEY_NAME"
+            placeholder={t('envKeyPlaceholder')}
             className="bg-background-dark border-terminal-border w-full border px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
           />
           <input
             type="password"
             value={newValue}
             onChange={e => setNewValue(e.target.value)}
-            placeholder="value"
+            placeholder={t('envValuePlaceholder')}
             className="bg-background-dark border-terminal-border w-full border px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
           />
           <div className="flex gap-2">
@@ -135,7 +136,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
               onClick={handleAdd}
               disabled={!newKey.trim()}
               className="bg-primary/20 text-primary border-primary/30 hover:bg-primary/30 border px-3 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors disabled:opacity-40">
-              Save
+              {t('commonSave')}
             </button>
             <button
               onClick={() => {
@@ -144,7 +145,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
                 setNewValue('');
               }}
               className="border-terminal-border border px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300">
-              Cancel
+              {t('commonCancel')}
             </button>
           </div>
         </div>
@@ -152,7 +153,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
 
       {entries.length === 0 && !adding ? (
         <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-          No environment variables set
+          {t('envEmpty')}
         </div>
       ) : (
         <div className="space-y-1">
@@ -201,13 +202,13 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
                   <button
                     onClick={() => handleEditStart(key)}
                     className="flex-shrink-0 text-slate-600 transition-colors hover:text-slate-300"
-                    title="Edit">
+                    title={t('commonEdit')}>
                     <span className="material-symbols-outlined text-[14px]">edit</span>
                   </button>
                   <button
                     onClick={() => handleDelete(key)}
                     className="flex-shrink-0 text-slate-600 transition-colors hover:text-red-400"
-                    title="Delete">
+                    title={t('commonDelete')}>
                     <span className="material-symbols-outlined text-[14px]">delete</span>
                   </button>
                 </>

@@ -1,4 +1,5 @@
 import { CodeBlock } from './CodeBlock';
+import { t } from '@extension/i18n';
 import { useState } from 'react';
 import type { ThinkingData } from '../hooks/useAgentChat';
 
@@ -10,7 +11,7 @@ export const ThinkingBlock = ({ thinking }: ThinkingBlockProps) => {
   const [expanded, setExpanded] = useState(false);
 
   const seconds = Math.round(thinking.durationMs / 1000);
-  const label = seconds === 1 ? 'Thought for 1s' : `Thought for ${seconds}s`;
+  const label = seconds === 1 ? t('thinkingDurationOne') : t('thinkingDuration', String(seconds));
 
   return (
     <div className="space-y-2">

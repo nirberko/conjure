@@ -1,3 +1,4 @@
+import { t } from '@extension/i18n';
 import { useState, useEffect } from 'react';
 import type { AIProvider } from '@extension/shared';
 
@@ -119,7 +120,7 @@ export const ProviderSettings = () => {
             <label
               htmlFor="provider-select"
               className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              AI Provider
+              {t('providerLabelAiProvider')}
             </label>
             <div className="group relative">
               <select
@@ -144,7 +145,7 @@ export const ProviderSettings = () => {
             <label
               htmlFor="api-key-input"
               className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              API Access Key
+              {t('providerLabelApiKey')}
             </label>
             <div className="relative">
               <input
@@ -164,7 +165,7 @@ export const ProviderSettings = () => {
                 </span>
               </button>
             </div>
-            <p className="mt-2 font-mono text-[9px] tracking-wide text-slate-600">ENCRYPTED LOCAL STORAGE ACTIVE</p>
+            <p className="mt-2 font-mono text-[9px] tracking-wide text-slate-600">{t('providerLocalStorageNote')}</p>
           </div>
 
           {/* 03. Agent Recursion Limit */}
@@ -172,7 +173,7 @@ export const ProviderSettings = () => {
             <label
               htmlFor="recursion-limit-input"
               className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              Agent Recursion Limit
+              {t('providerLabelRecursionLimit')}
             </label>
             <div className="flex items-center gap-3">
               <input
@@ -188,9 +189,7 @@ export const ProviderSettings = () => {
                 }}
                 className="minimal-input w-24 text-right font-mono"
               />
-              <span className="text-[10px] tracking-wide text-slate-500">
-                Max agent steps (10–200). Increase if you hit recursion limit errors.
-              </span>
+              <span className="text-[10px] tracking-wide text-slate-500">{t('providerRecursionLimitHelp')}</span>
             </div>
           </div>
 
@@ -199,7 +198,7 @@ export const ProviderSettings = () => {
             <label
               htmlFor="model-select"
               className="block text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500">
-              Neural Engine Selection
+              {t('providerLabelModel')}
             </label>
             <div className="group relative">
               <select
@@ -223,9 +222,7 @@ export const ProviderSettings = () => {
           <div className="border-t border-slate-900 pt-4">
             <div className="flex gap-3">
               <div className="h-8 w-1 shrink-0 bg-slate-800" />
-              <p className="text-[10px] leading-relaxed tracking-tight text-slate-500">
-                Configuration updates are applied immediately to active injection scripts and the AI generation bridge.
-              </p>
+              <p className="text-[10px] leading-relaxed tracking-tight text-slate-500">{t('providerConfigNote')}</p>
             </div>
           </div>
         </div>
@@ -236,19 +233,21 @@ export const ProviderSettings = () => {
         <button
           onClick={saveSettings}
           className="bg-primary flex w-full items-center justify-center gap-2 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:brightness-110">
-          {saved ? 'Changes Committed' : 'Commit Changes'}
+          {saved ? t('providerSaved') : t('providerSaveButton')}
         </button>
 
         <div className="mt-6 flex items-center justify-between">
           <span className="hover:text-primary cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors">
-            Docs
+            {t('providerDocs')}
           </span>
           <div className="flex items-center gap-1">
             <span className="h-1 w-1 animate-pulse rounded-full bg-green-500" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-600">System Ready</span>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-slate-600">
+              {t('providerSystemReady')}
+            </span>
           </div>
           <span className="hover:text-primary cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors">
-            Security
+            {t('providerSecurity')}
           </span>
         </div>
       </footer>

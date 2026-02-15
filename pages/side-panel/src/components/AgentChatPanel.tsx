@@ -5,6 +5,7 @@ import { ThinkingBlock } from './ThinkingBlock';
 import { UserInputForm } from './UserInputForm';
 import { useAgentChat } from '../hooks/useAgentChat';
 import { getToolMetadata } from '../utils/tool-metadata';
+import { t } from '@extension/i18n';
 import { useState, useRef, useEffect } from 'react';
 import type { AgentMessage, ToolCallDisplay } from '../hooks/useAgentChat';
 
@@ -15,17 +16,17 @@ interface AgentChatPanelProps {
 /** Relative time e.g. "2 hours ago", "a few seconds ago" */
 const formatRelativeTime = (ms: number): string => {
   const sec = Math.floor((Date.now() - ms) / 1000);
-  if (sec < 10) return 'a few seconds ago';
-  if (sec < 60) return `${sec} seconds ago`;
+  if (sec < 10) return t('chatTimeFewSecondsAgo');
+  if (sec < 60) return t('chatTimeSecondsAgo', String(sec));
   const min = Math.floor(sec / 60);
-  if (min === 1) return '1 minute ago';
-  if (min < 60) return `${min} minutes ago`;
+  if (min === 1) return t('chatTimeOneMinuteAgo');
+  if (min < 60) return t('chatTimeMinutesAgo', String(min));
   const hr = Math.floor(min / 60);
-  if (hr === 1) return '1 hour ago';
-  if (hr < 24) return `${hr} hours ago`;
+  if (hr === 1) return t('chatTimeOneHourAgo');
+  if (hr < 24) return t('chatTimeHoursAgo', String(hr));
   const d = Math.floor(hr / 24);
-  if (d === 1) return '1 day ago';
-  return `${d} days ago`;
+  if (d === 1) return t('chatTimeOneDayAgo');
+  return t('chatTimeDaysAgo', String(d));
 };
 
 const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
@@ -79,13 +80,13 @@ const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
           {Object.entries(toolCall.args).length > 0 ? (
             <CodeBlock code={JSON.stringify(toolCall.args, null, 2)} language="json" />
           ) : (
-            <CodeBlock code="No arguments" language="text" showLineNumbers={false} />
+            <CodeBlock code={t('chatToolNoArguments')} language="text" showLineNumbers={false} />
           )}
 
           {/* Result */}
           {toolCall.result && (
             <div>
-              <div className="mb-1 text-[9px] uppercase tracking-wider text-slate-600">Result</div>
+              <div className="mb-1 text-[9px] uppercase tracking-wider text-slate-600">{t('chatToolResult')}</div>
               <CodeBlock code={formatResult(toolCall.result)} language="json" maxHeight="8rem" />
             </div>
           )}
@@ -114,7 +115,7 @@ const MessageBubble = ({ message }: { message: AgentMessage }) => {
         </div>
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-600 text-[11px] font-semibold uppercase text-slate-300"
-          title="You">
+          title={t('chatUserTitle')}>
           Y
         </div>
       </div>
@@ -128,9 +129,11 @@ const MessageBubble = ({ message }: { message: AgentMessage }) => {
       {/* Header: icon + Conjure name on one row */}
       <div className="flex items-center gap-3">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-700/80">
-          <img src={CONJURE_LOGO_URL} alt="Conjure" className="h-5 w-5 object-contain" />
+          <img src={CONJURE_LOGO_URL} alt={t('chatAgentName')} className="h-5 w-5 object-contain" />
         </div>
-        <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500">Conjure</div>
+        <div className="font-mono text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          {t('chatAgentName')}
+        </div>
       </div>
       {/* Tools and response on the line below, fixed to the left */}
       <div className="space-y-2">
@@ -213,15 +216,12 @@ export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
       <div className="flex-1 space-y-10 overflow-y-auto scroll-smooth p-6">
         {isLoading && (
           <div className="py-8 text-center font-mono text-[10px] uppercase tracking-widest text-slate-600">
-            Loading conversation...
+            {t('chatLoading')}
           </div>
         )}
 
         {messages.length === 0 && !isRunning && !isLoading && (
-          <div className="max-w-xl text-sm leading-relaxed text-slate-400">
-            Ready to initialize. Describe what you want to build. The agent will plan, generate, and deploy artifacts
-            for you.
-          </div>
+          <div className="max-w-xl text-sm leading-relaxed text-slate-400">{t('chatEmptyState')}</div>
         )}
 
         {messages.map(msg => (
@@ -255,7 +255,7 @@ export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask or command..."
+                placeholder={t('chatPlaceholder')}
                 className="font-display w-full border-none bg-transparent py-2 pl-6 pr-24 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:outline-none focus:ring-0"
                 disabled={isRunning}
               />

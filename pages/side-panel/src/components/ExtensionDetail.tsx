@@ -2,6 +2,7 @@ import { AgentChatPanel } from './AgentChatPanel';
 import { ArtifactList } from './ArtifactList';
 import { DatabaseBrowser } from './DatabaseBrowser';
 import { EnvManager } from './EnvManager';
+import { t } from '@extension/i18n';
 import { useState } from 'react';
 import type { Extension } from '@extension/shared';
 
@@ -16,10 +17,10 @@ export const ExtensionDetail = ({ extension, onBack }: ExtensionDetailProps) => 
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('chat');
 
   const subTabs: { id: SubTab; label: string }[] = [
-    { id: 'chat', label: 'Chat' },
-    { id: 'artifacts', label: 'Artifacts' },
-    { id: 'database', label: 'Database' },
-    { id: 'env', label: 'Env' },
+    { id: 'chat', label: t('extensionDetailTabChat') },
+    { id: 'artifacts', label: t('extensionDetailTabArtifacts') },
+    { id: 'database', label: t('extensionDetailTabDatabase') },
+    { id: 'env', label: t('extensionDetailTabEnv') },
   ];
 
   return (
