@@ -239,7 +239,6 @@ Available agent tools:
 | `generate_background_worker` | Generate a background-worker artifact (runs in offscreen document) |
 | `edit_artifact` | Modify an existing artifact's code |
 | `deploy_artifact` | Inject artifact into the current page (or start a background worker in offscreen) |
-| `verify_deployment` | Check if the deployed artifact is visible and working |
 | `inspect_dom` | Serialize and read the page's DOM structure |
 | `inspect_styles` | Query computed styles of specific elements |
 | `read_page_text` | Extract text content from the page |

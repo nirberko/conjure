@@ -10,7 +10,6 @@ import { createPickElementTool } from './pick-element.js';
 import { createRemoveArtifactTool } from './remove-artifact.js';
 import { createRequestUserInputTool, REQUEST_USER_INPUT_TOOL_NAME } from './request-user-input.js';
 import { createThinkTool } from './think.js';
-import { createVerifyDeploymentTool } from './verify-deployment.js';
 import type { ToolContext } from '../types.js';
 
 export const createAgentTools = (ctx: ToolContext) => [
@@ -24,7 +23,6 @@ export const createAgentTools = (ctx: ToolContext) => [
   createInspectStylesTool(ctx),
   createReadPageTextTool(ctx),
   createDeployArtifactTool(ctx),
-  createVerifyDeploymentTool(ctx),
   createPickElementTool(ctx),
   createRemoveArtifactTool(ctx),
   createRequestUserInputTool(ctx),
@@ -40,7 +38,6 @@ export {
   createInspectStylesTool,
   createReadPageTextTool,
   createDeployArtifactTool,
-  createVerifyDeploymentTool,
   createPickElementTool,
   createRemoveArtifactTool,
   createRequestUserInputTool,

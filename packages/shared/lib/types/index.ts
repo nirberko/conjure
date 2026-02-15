@@ -205,7 +205,6 @@ export type MessageType =
   | 'READ_PAGE_TEXT'
   | 'INJECT_ARTIFACT'
   | 'REMOVE_ARTIFACT'
-  | 'VERIFY_DEPLOYMENT'
   | 'WORKER_MESSAGE'
   // Extension DB messages
   | 'EXT_DB_CREATE_TABLES'

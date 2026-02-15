@@ -130,26 +130,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       break;
     }
 
-    case 'VERIFY_DEPLOYMENT': {
-      const { artifactId, expectedSelector } = (message.payload ?? {}) as {
-        artifactId: string;
-        expectedSelector?: string;
-      };
-      const exists = isArtifactInjected(artifactId);
-      let selectorFound = true;
-
-      if (expectedSelector) {
-        selectorFound = !!document.querySelector(expectedSelector);
-      }
-
-      sendResponse({
-        injected: exists,
-        selectorFound,
-        success: exists && selectorFound,
-      });
-      break;
-    }
-
     case 'WORKER_MESSAGE': {
       // Dispatch a custom event so injected React components can listen to
       // messages from background workers

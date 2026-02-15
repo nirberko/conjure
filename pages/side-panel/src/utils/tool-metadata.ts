@@ -15,7 +15,6 @@ const toolMetadataMap: Record<string, ToolMetadata> = {
   generate_background_worker: { label: 'Generate Worker', icon: 'engineering' },
   edit_artifact: { label: 'Edit Artifact', icon: 'edit' },
   deploy_artifact: { label: 'Deploy', icon: 'rocket_launch' },
-  verify_deployment: { label: 'Verify', icon: 'check_circle' },
   remove_artifact: { label: 'Remove', icon: 'delete' },
   request_user_input: { label: 'Request Input', icon: 'input' },
 };
