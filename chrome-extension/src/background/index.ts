@@ -312,8 +312,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
                 const mountEl = document.getElementById(mId);
                 if (mountEl) {
-                  const root = (ReactDOM as { createRoot: (el: HTMLElement) => { render: (el: unknown) => void } }).createRoot(mountEl);
-                  root.render((React as { createElement: (type: unknown, props: unknown) => unknown }).createElement(ComponentResult, { context }));
+                  const root = (
+                    ReactDOM as { createRoot: (el: HTMLElement) => { render: (el: unknown) => void } }
+                  ).createRoot(mountEl);
+                  root.render(
+                    (React as { createElement: (type: unknown, props: unknown) => unknown }).createElement(
+                      ComponentResult,
+                      { context },
+                    ),
+                  );
                 }
                 return;
               } catch (primaryErr: unknown) {
