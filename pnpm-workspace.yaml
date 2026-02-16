@@ -3,6 +3,7 @@ packages:
   - pages/*
   - packages/*
   - tests/*
+  - website
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@swc/core'
