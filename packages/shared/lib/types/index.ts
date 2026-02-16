@@ -95,6 +95,7 @@ export interface Artifact {
   code: string;
   codeVersions: { code: string; timestamp: number }[];
   elementXPath?: string;
+  dependencies?: Record<string, string>;
   enabled: boolean;
   createdAt: number;
   updatedAt: number;
