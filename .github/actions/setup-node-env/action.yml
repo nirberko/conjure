@@ -8,6 +8,8 @@ runs:
     - uses: actions/setup-node@v4
       with:
         node-version-file: '.nvmrc'
+    - run: npm install -g npm@11
+      shell: bash
     - run: pnpm install --frozen-lockfile --ignore-scripts
       shell: bash
     - run: pnpm run --if-present postinstall
