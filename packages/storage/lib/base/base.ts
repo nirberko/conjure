@@ -96,7 +96,12 @@ export const createStorage = <D = string>(
       return fallback;
     }
 
-    return deserialize(value[key] as string) ?? fallback;
+    const stored = value[key];
+    if (stored == null || typeof stored !== 'string') {
+      return fallback;
+    }
+
+    return deserialize(stored) ?? fallback;
   };
 
   const set = async (valueOrUpdate: ValueOrUpdateType<D>) => {
@@ -128,7 +133,10 @@ export const createStorage = <D = string>(
     // Check if the key we are listening for is in the changes object
     if (changes[key] === undefined) return;
 
-    const valueOrUpdate: ValueOrUpdateType<D> = deserialize(changes[key].newValue as string);
+    const newValue = changes[key].newValue;
+    if (newValue == null || typeof newValue !== 'string') return;
+
+    const valueOrUpdate: ValueOrUpdateType<D> = deserialize(newValue);
 
     if (cache === valueOrUpdate) return;
 
