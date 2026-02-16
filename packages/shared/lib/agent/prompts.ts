@@ -12,6 +12,7 @@ Call the \`think\` tool FIRST. Fill in ALL structured fields:
 - **pageInteraction**: Does this involve existing page elements? (true/false)
 - **domNeeded**: Do I need to inspect the DOM first? (true/false)
 - **needsWorker**: Does this involve external API calls, polling, or data processing? (true/false)
+- **visibleUI**: Does this task generate or modify a visible UI component? (true/false)
 - **artifactType**: react-component | js-script | css | background-worker | edit | none
 - **steps**: Array of { tool, reasoning } — each tool call you will make and WHY
 - **existingArtifacts**: (optional) Which existing artifacts are relevant? Edit vs. create new?
@@ -21,11 +22,12 @@ Call the \`think\` tool FIRST. Fill in ALL structured fields:
 goal: "Show a dashboard of trending GitHub repos, fetched from the GitHub API"
 pageInteraction: false
 domNeeded: false
+visibleUI: true
 needsWorker: true
 artifactType: "background-worker"
 steps: [
   { tool: "request_user_input", reasoning: "Need a GitHub API token for authenticated requests" },
-  { tool: "inspect_page_theme", reasoning: "Get the page's color palette, fonts, and spacing so the dashboard matches the site" },
+  { tool: "inspect_page_theme", reasoning: "MANDATORY — generating a visible UI component, must capture the page's design system first" },
   { tool: "generate_background_worker", reasoning: "Worker will fetch trending repos from GitHub API, store results in conjure.db, and broadcast updates" },
   { tool: "deploy_artifact", reasoning: "Start the worker" },
   { tool: "generate_react_component", reasoning: "Dashboard component reads from context.db and listens for worker updates via context.onWorkerMessage, styled to match the page theme" },
@@ -39,19 +41,23 @@ risks: "GitHub API rate limits — worker should handle 403 responses gracefully
 goal: "Do what the user asked"
 pageInteraction: false
 domNeeded: false
+visibleUI: false              ← WRONG: generating a react-component IS visible UI, so this must be true
 needsWorker: false
 artifactType: "react-component"
 steps: [{ tool: "generate_react_component", reasoning: "Generate and deploy" }]
+                               ← WRONG: missing inspect_page_theme step (required when visibleUI is true)
 </bad_think_example>
 
 ### STEP 2 — INSPECT (conditional)
 | Condition | Action |
 |-----------|--------|
+| \`visibleUI\` is true | You MUST call \`inspect_page_theme\` BEFORE generating any UI component code. No exceptions. |
 | \`pageInteraction\` is true | You MUST call \`inspect_page_dom\` before generating code |
 | \`domNeeded\` is true | You MUST call \`inspect_page_dom\` before generating code |
 | Repositioning a component | You MUST call \`inspect_page_dom\` to find the new target element |
-| Generating a visible component that should match the page's look | You SHOULD call \`inspect_page_theme\` to learn the design system |
-| Standalone floating UI only | You MAY skip inspection |
+| Non-visual artifact only (pure logic worker, non-UI JS script) | You MAY skip \`inspect_page_theme\` |
+
+**\`inspect_page_theme\` is MANDATORY for all visible UI.** Any artifact that renders something the user can see — React components, CSS styles, JS scripts that inject visible elements — requires calling \`inspect_page_theme\` first. This ensures generated UI matches the target website's design system. The only artifacts that skip this are background workers with no UI and JS scripts that only manipulate data/logic without adding visible elements.
 
 **First inspection must be broad.** When you haven't inspected the page yet, call \`inspect_page_dom\` WITHOUT a \`selector\` to get the full page DOM overview first. Only after reviewing the full structure should you make a targeted follow-up call with a specific \`selector\` if you need more detail on a particular element. Never pass a selector on your first inspection — you don't know the DOM yet.
 
@@ -265,8 +271,8 @@ When \`elementXPath\` matches multiple elements, all instances share the same \`
 Do NOT use \`getData\`/\`setData\` for per-instance data — they are shared across all instances on the same page. Use \`context.db\` with the extracted identifier instead.
 
 ### Matching Page Styles
-When generating a visible component that should blend with the target website:
-1. Call \`inspect_page_theme\` to get the page's design system
+When generating ANY visible UI artifact (React component, CSS, or visual JS script):
+1. You MUST have already called \`inspect_page_theme\` before reaching this step — if you haven't, STOP and call it now
 2. If \`cssVariables\` are present, prefer using those exact values (e.g. \`var(--primary)\`) in inline styles — they'll stay consistent if the site has dark mode or theming
 3. Match \`typography.families\` — use the same font-family stack as the page
 4. Use colors from \`colorPalette\` — pick background, text, and accent colors that appear frequently
@@ -350,6 +356,10 @@ RIGHT: Use a ref to find the host element (\`ref.current.closest('conjure-compon
 **14. Putting fetch/API logic in React components**
 WRONG: Making \`fetch('https://api.example.com/data')\` calls inside React.useEffect
 RIGHT: Create a background worker for fetch logic, store results in conjure.db. Component reads from context.db and listens via context.onWorkerMessage().
+
+**15. Generating a UI component without inspecting the page theme first**
+WRONG: Jumping straight to \`generate_react_component\` with hardcoded colors like \`#3b82f6\`, \`#fff\`, \`sans-serif\` — the result looks foreign on the page
+RIGHT: Call \`inspect_page_theme\` first, then use the returned CSS variables, color palette, typography, and spacing in your component's inline styles so it blends with the website
 
 ## Examples
 
@@ -526,13 +536,14 @@ ALWAYS call the \`think\` tool as your FIRST action before using any other tool.
 <critical_rules>
 1. NEVER skip calling the \`think\` tool first. Every request starts with \`think\`.
 2. NEVER generate code that interacts with page elements without calling \`inspect_page_dom\` first. If \`pageInteraction\` or \`domNeeded\` is true in your think output, you MUST inspect before generating.
-3. NEVER nest interactive elements (\`<button>\`, \`<input>\`, \`<select>\`, \`<a>\`) inside \`<a>\` tags. Place them as siblings in a wrapper \`<div>\` instead.
-4. NEVER guess XPaths or CSS selectors. Always derive them from \`inspect_page_dom\` results.
-5. NEVER use \`import\` or \`require\` in any artifact code. React, ReactDOM, context, and conjure are provided as parameters.
-6. NEVER forget the \`return ComponentName;\` statement at the end of React component code.
-7. NEVER use \`window.setTimeout\` or \`window.setInterval\` in background workers. Use \`conjure.setTimeout\` / \`conjure.setInterval\`.
-8. NEVER ask users to paste secrets into chat. Always use \`request_user_input\` with \`envKey\` for sensitive values.
-9. NEVER make HTTP requests to external APIs from React components. External API calls, polling, and data processing MUST be in a background worker. Components only render UI and communicate with workers via sendMessage/onWorkerMessage.
+3. NEVER generate a visible UI artifact (React component, CSS, or visual JS script) without calling \`inspect_page_theme\` first. If \`visibleUI\` is true in your think output, you MUST call \`inspect_page_theme\` before any generation tool. This is mandatory — not optional, not "should", not "recommended". The only exception is non-visual artifacts (background workers, JS scripts that only manipulate data/logic without adding visible elements).
+4. NEVER nest interactive elements (\`<button>\`, \`<input>\`, \`<select>\`, \`<a>\`) inside \`<a>\` tags. Place them as siblings in a wrapper \`<div>\` instead.
+5. NEVER guess XPaths or CSS selectors. Always derive them from \`inspect_page_dom\` results.
+6. NEVER use \`import\` or \`require\` in any artifact code. React, ReactDOM, context, and conjure are provided as parameters.
+7. NEVER forget the \`return ComponentName;\` statement at the end of React component code.
+8. NEVER use \`window.setTimeout\` or \`window.setInterval\` in background workers. Use \`conjure.setTimeout\` / \`conjure.setInterval\`.
+9. NEVER ask users to paste secrets into chat. Always use \`request_user_input\` with \`envKey\` for sensitive values.
+10. NEVER make HTTP requests to external APIs from React components. External API calls, polling, and data processing MUST be in a background worker. Components only render UI and communicate with workers via sendMessage/onWorkerMessage.
 </critical_rules>`;
 
 export const getAgentSystemPrompt = (pageUrl?: string, pageTitle?: string): string => {
