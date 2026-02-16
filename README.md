@@ -7,7 +7,7 @@
 
 **AI-Powered Component Injector - Enhance any website with custom UI components**
 
-### Why "Conjure"?
+## Why "Conjure"?
 
 *Conjure* means to summon something into existence, as if by magic - describe a UI component in plain English and watch the AI bring it to life on any webpage. No boilerplate, no manual coding; just intent and a result.
 
