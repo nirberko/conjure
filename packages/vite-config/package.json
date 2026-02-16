@@ -20,6 +20,6 @@
   "devDependencies": {
     "@extension/hmr": "workspace:*",
     "@extension/tsconfig": "workspace:*",
-    "@vitejs/plugin-react-swc": "^3.9.0"
+    "@vitejs/plugin-react-swc": "^4.2.3"
   }
 }
