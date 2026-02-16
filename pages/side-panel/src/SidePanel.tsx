@@ -5,7 +5,7 @@ import { ProviderSettings } from './components/ProviderSettings';
 import { useExtensions } from './hooks/useExtensions';
 import { t } from '@extension/i18n';
 import { withErrorBoundary, withSuspense } from '@extension/shared';
-import { ErrorDisplay, LoadingSpinner } from '@extension/ui';
+import { ErrorDisplay, LoadingSpinner } from '@extension/ui/components';
 import { useState } from 'react';
 import type { Extension } from '@extension/shared';
 

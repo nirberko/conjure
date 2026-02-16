@@ -1,7 +1,7 @@
 import '@src/Popup.css';
 import { t } from '@extension/i18n';
 import { withErrorBoundary, withSuspense } from '@extension/shared';
-import { ErrorDisplay, LoadingSpinner } from '@extension/ui';
+import { ErrorDisplay, LoadingSpinner } from '@extension/ui/components';
 
 const Popup = () => {
   const openSidePanel = async () => {

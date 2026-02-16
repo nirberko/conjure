@@ -10,6 +10,11 @@
   ],
   "types": "index.ts",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./index.ts",
+    "./components": "./lib/components/index.ts",
+    "./*": "./*"
+  },
   "scripts": {
     "clean:bundle": "rimraf dist",
     "clean:node_modules": "pnpx rimraf node_modules",
