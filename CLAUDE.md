@@ -19,7 +19,7 @@ AI-powered Chrome extension that lets users create and inject React components, 
 | Package | Purpose |
 |---------|---------|
 | `packages/shared/` | Core: agent system, DB, types, AI providers |
-| `packages/shared/lib/agent/tools/` | 14 LangGraph agent tools |
+| `packages/shared/lib/agent/tools/` | LangGraph agent tools (code generation, artifact management, DOM inspection) |
 | `packages/shared/lib/db/` | Dexie schema, migrations |
 | `chrome-extension/` | Manifest, background service worker |
 | `pages/side-panel/` | Main React UI |
