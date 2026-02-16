@@ -1,7 +1,7 @@
 name: Build And Upload Extension Zip Via Artifact
 
 on:
-  pull_request_target:
+  pull_request:
     branches: [main]
 
 jobs:
@@ -9,8 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
       - uses: ./.github/actions/setup-node-env
       - run: pnpm build
       - uses: actions/upload-artifact@v6

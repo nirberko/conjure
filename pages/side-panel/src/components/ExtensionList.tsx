@@ -118,11 +118,11 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
       {!showCreate && (
         <button
           onClick={() => setShowCreate(true)}
-          className="hover:text-primary group flex w-full items-center justify-center py-3 transition-colors">
-          <span className="material-symbols-outlined group-hover:text-primary text-[24px] text-slate-600 transition-transform group-hover:rotate-90">
+          className="group flex w-full items-center justify-center py-3 transition-colors hover:text-primary">
+          <span className="material-symbols-outlined text-[24px] text-slate-600 transition-transform group-hover:rotate-90 group-hover:text-primary">
             add
           </span>
-          <span className="group-hover:text-primary ml-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+          <span className="ml-2 text-[11px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-primary">
             {t('extensionListNewButton')}
           </span>
         </button>
@@ -130,7 +130,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
 
       {/* Create form */}
       {showCreate && (
-        <div className="border-terminal-border space-y-4 border p-4">
+        <div className="space-y-4 border border-terminal-border p-4">
           <input
             type="text"
             value={newName}
@@ -158,7 +158,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
             <button
               onClick={handleCreate}
               disabled={!newName.trim() || !newUrl.trim()}
-              className="text-primary font-mono text-[10px] uppercase tracking-widest underline-offset-4 transition-all hover:underline disabled:no-underline disabled:opacity-30">
+              className="font-mono text-[10px] uppercase tracking-widest text-primary underline-offset-4 transition-all hover:underline disabled:no-underline disabled:opacity-30">
               {t('commonCreate')}
             </button>
             <button
@@ -181,7 +181,7 @@ export const ExtensionList = ({ extensions, loading, onSelect, onCreate, onToggl
         {extensions.map(ext => (
           <div
             key={ext.id}
-            className="border-terminal-border group cursor-pointer border p-4 transition-colors hover:border-slate-700"
+            className="group cursor-pointer border border-terminal-border p-4 transition-colors hover:border-slate-700"
             role="button"
             tabIndex={0}
             onClick={() => onSelect(ext)}

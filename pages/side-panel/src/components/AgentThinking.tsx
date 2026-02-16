@@ -12,11 +12,11 @@ export const AgentThinking = ({ isRunning, isThinking, onStop }: AgentThinkingPr
   const label = isThinking ? t('agentThinking') : t('agentWorking');
 
   return (
-    <div className="border-terminal-border flex items-center gap-3 border bg-black/40 px-3 py-2">
+    <div className="flex items-center gap-3 border border-terminal-border bg-black/40 px-3 py-2">
       <div className="thinking-dots flex items-center gap-1">
-        <span className="dot bg-primary inline-block h-1.5 w-1.5 rounded-full" />
-        <span className="dot bg-primary inline-block h-1.5 w-1.5 rounded-full" />
-        <span className="dot bg-primary inline-block h-1.5 w-1.5 rounded-full" />
+        <span className="dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+        <span className="dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+        <span className="dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
       </div>
       <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">{label}</span>
       <button

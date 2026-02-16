@@ -74,7 +74,7 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
             id="db-table-select"
             value={selectedTable}
             onChange={e => selectTable(e.target.value)}
-            className="bg-background-dark border-terminal-border w-full border px-3 py-2 font-mono text-[11px] text-slate-300">
+            className="w-full border border-terminal-border bg-background-dark px-3 py-2 font-mono text-[11px] text-slate-300">
             <option value="">{t('dbTableSelectPlaceholder')}</option>
             {tables.map(t => (
               <option key={t.name} value={t.name}>
@@ -90,7 +90,7 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
         <div className="flex gap-4">
           <button
             onClick={handleInsert}
-            className="text-primary flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest transition-colors hover:text-white">
+            className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-widest text-primary transition-colors hover:text-white">
             <span className="material-symbols-outlined text-[14px]">add</span>
             {t('dbInsertAction')}
           </button>

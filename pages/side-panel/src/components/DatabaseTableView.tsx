@@ -135,7 +135,7 @@ export const DatabaseTableView = ({ rows, primaryKey, onEdit, onDelete }: Databa
         const keyStr = JSON.stringify(key);
 
         return (
-          <div key={keyStr ?? idx} className="border-terminal-border group border p-3">
+          <div key={keyStr ?? idx} className="group border border-terminal-border p-3">
             <div className="space-y-1.5">
               {Object.entries(row).map(([fieldKey, value]) => (
                 <div key={fieldKey} className="flex gap-2 text-[11px]">
@@ -153,7 +153,7 @@ export const DatabaseTableView = ({ rows, primaryKey, onEdit, onDelete }: Databa
             <div className="mt-3 flex gap-3 border-t border-slate-800/50 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
               <button
                 onClick={() => onEdit(row)}
-                className="text-primary font-mono text-[9px] uppercase tracking-widest transition-colors hover:text-white">
+                className="font-mono text-[9px] uppercase tracking-widest text-primary transition-colors hover:text-white">
                 {t('commonEdit')}
               </button>
               {confirmDeleteKey === keyStr ? (

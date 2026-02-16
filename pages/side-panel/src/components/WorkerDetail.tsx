@@ -137,10 +137,10 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-terminal-border border-b bg-black/40 px-4 py-3">
+      <div className="border-b border-terminal-border bg-black/40 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="hover:text-primary text-slate-500 transition-colors">
+            <button onClick={onBack} className="text-slate-500 transition-colors hover:text-primary">
               <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             </button>
             <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
             <>
               <button
                 onClick={handleReload}
-                className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
+                className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-primary hover:underline">
                 {t('commonReload')}
               </button>
               <button
@@ -196,20 +196,20 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
       </div>
 
       {/* Tabs */}
-      <nav className="border-terminal-border flex border-b bg-black/20 px-4">
+      <nav className="flex border-b border-terminal-border bg-black/20 px-4">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`relative px-4 py-2.5 text-[10px] font-medium uppercase tracking-widest transition-all ${
               activeTab === tab.id
-                ? 'text-primary border-primary border-b'
+                ? 'border-b border-primary text-primary'
                 : 'border-b border-transparent text-slate-600 hover:text-slate-400'
             }`}>
             {tab.label}
-            {activeTab === tab.id && <span className="bg-primary absolute bottom-0 left-0 h-[1px] w-full blur-[2px]" />}
+            {activeTab === tab.id && <span className="absolute bottom-0 left-0 h-[1px] w-full bg-primary blur-[2px]" />}
             {tab.id === 'logs' && logs.length > 0 && activeTab !== 'logs' && (
-              <span className="bg-primary/60 ml-1.5 inline-block h-1 w-1 rounded-full" />
+              <span className="ml-1.5 inline-block h-1 w-1 rounded-full bg-primary/60" />
             )}
           </button>
         ))}
@@ -220,16 +220,16 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
         {activeTab === 'logs' && (
           <div className="flex h-full flex-col">
             {/* Log toolbar */}
-            <div className="border-terminal-border flex items-center gap-2 border-b bg-black/30 px-3 py-1.5">
+            <div className="flex items-center gap-2 border-b border-terminal-border bg-black/30 px-3 py-1.5">
               <select
                 value={levelFilter}
                 onChange={e => setLevelFilter(e.target.value as LogLevel)}
-                className="border-terminal-border rounded border bg-black/40 px-2 py-0.5 font-mono text-[10px] text-slate-400 outline-none">
+                className="rounded border border-terminal-border bg-black/40 px-2 py-0.5 font-mono text-[10px] text-slate-400 outline-none">
                 <option value="all">{t('workerLogFilterAll')}</option>
                 <option value="log">{t('workerLogFilterLog')}</option>
                 <option value="error">{t('workerLogFilterError')}</option>
               </select>
-              <div className="border-terminal-border flex flex-1 items-center gap-1 border bg-black/40 px-2 py-0.5">
+              <div className="flex flex-1 items-center gap-1 border border-terminal-border bg-black/40 px-2 py-0.5">
                 <span className="material-symbols-outlined text-[12px] text-slate-600">search</span>
                 <input
                   type="text"
@@ -275,7 +275,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
             </div>
 
             {/* Log footer */}
-            <div className="border-terminal-border border-t bg-black/40 px-3 py-1">
+            <div className="border-t border-terminal-border bg-black/40 px-3 py-1">
               <span className="font-mono text-[9px] text-slate-700">
                 {t('workerLogEntryCount', [String(filteredLogs.length), String(logs.length)])}
               </span>
@@ -299,7 +299,7 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
               <>
                 {/* Version list */}
                 <div
-                  className="border-terminal-border overflow-y-auto border-b"
+                  className="overflow-y-auto border-b border-terminal-border"
                   style={{ maxHeight: selectedVersionIdx !== null ? '30%' : '100%' }}>
                   {[...artifact.codeVersions].reverse().map((version, i) => {
                     const actualIdx = artifact.codeVersions.length - 1 - i;
@@ -311,13 +311,13 @@ export const WorkerDetail = ({ artifact, workerStatus, onBack, onStartWorker, on
                         onClick={() => setSelectedVersionIdx(isSelected ? null : actualIdx)}
                         className={`flex w-full items-center justify-between px-4 py-2 text-left transition-colors ${
                           isSelected
-                            ? 'bg-primary/5 border-primary/20 border-l-2'
+                            ? 'border-l-2 border-primary/20 bg-primary/5'
                             : 'border-l-2 border-transparent hover:bg-white/[0.02]'
                         }`}>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-[10px] text-slate-400">v{actualIdx + 1}</span>
                           {isCurrent && (
-                            <span className="sharp-badge bg-primary/10 text-primary border-primary/30 border px-1.5 py-0 font-mono text-[8px]">
+                            <span className="sharp-badge border border-primary/30 bg-primary/10 px-1.5 py-0 font-mono text-[8px] text-primary">
                               {t('workerVersionCurrent')}
                             </span>
                           )}

@@ -235,7 +235,7 @@ export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
       <AgentThinking isRunning={isRunning} isThinking={!!activeThinking} onStop={stopAgent} />
 
       {/* Input */}
-      <footer className="bg-background-dark border-terminal-border border-t px-6 py-4">
+      <footer className="border-t border-terminal-border bg-background-dark px-6 py-4">
         {pendingInputRequest ? (
           <UserInputForm
             fields={pendingInputRequest.fields}
@@ -256,7 +256,7 @@ export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={t('chatPlaceholder')}
-                className="font-display w-full border-none bg-transparent py-2 pl-6 pr-24 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:outline-none focus:ring-0"
+                className="w-full border-none bg-transparent py-2 pl-6 pr-24 font-display text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:outline-none focus:ring-0"
                 disabled={isRunning}
               />
               <div className="absolute right-0 flex items-center gap-3">
@@ -264,14 +264,14 @@ export const AgentChatPanel = ({ extensionId }: AgentChatPanelProps) => {
                 <button
                   type="submit"
                   disabled={isRunning || !input.trim()}
-                  className="hover:text-primary text-slate-600 transition-colors disabled:opacity-30">
+                  className="text-slate-600 transition-colors hover:text-primary disabled:opacity-30">
                   <span className="material-symbols-outlined text-lg">north_east</span>
                 </button>
               </div>
             </div>
           </form>
         )}
-        <div className="via-terminal-border mt-1 h-[1px] w-full bg-gradient-to-r from-transparent to-transparent opacity-50" />
+        <div className="mt-1 h-[1px] w-full bg-gradient-to-r from-transparent via-terminal-border to-transparent opacity-50" />
       </footer>
     </div>
   );

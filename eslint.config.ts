@@ -6,9 +6,11 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import reactPlugin from 'eslint-plugin-react';
 import { browser, es2020, node } from 'globals';
+// eslint-disable-next-line import-x/no-deprecated
 import { config, configs as tsConfigs, parser as tsParser } from 'typescript-eslint';
 import type { FixupConfigArray } from '@eslint/compat';
 
+// eslint-disable-next-line import-x/no-deprecated
 export default config(
   // Shared configs
   js.configs.recommended,
@@ -52,6 +54,7 @@ export default config(
     rules: {
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       'prefer-const': 'error',
       'no-var': 'error',
       'func-style': ['error', 'expression', { allowArrowFunctions: true }],

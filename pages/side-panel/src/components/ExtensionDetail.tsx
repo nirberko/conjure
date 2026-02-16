@@ -26,10 +26,10 @@ export const ExtensionDetail = ({ extension, onBack }: ExtensionDetailProps) => 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="border-terminal-border flex flex-col gap-3 border-b p-4">
+      <header className="flex flex-col gap-3 border-b border-terminal-border p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="hover:text-primary text-slate-500 transition-colors">
+            <button onClick={onBack} className="text-slate-500 transition-colors hover:text-primary">
               <span className="material-symbols-outlined text-[20px]">arrow_back</span>
             </button>
             <div className="flex min-w-0 flex-1 flex-col">
@@ -42,29 +42,29 @@ export const ExtensionDetail = ({ extension, onBack }: ExtensionDetailProps) => 
         </div>
 
         {/* URL bar */}
-        <div className="border-terminal-border flex items-center gap-2 border bg-black/40 px-3 py-1.5">
+        <div className="flex items-center gap-2 border border-terminal-border bg-black/40 px-3 py-1.5">
           <span className="material-symbols-outlined text-[14px] text-slate-500">language</span>
           <span className="truncate font-mono text-[10px] text-slate-400">{extension.urlPattern}</span>
         </div>
       </header>
 
       {/* Sub-tabs */}
-      <nav className="border-terminal-border flex border-b bg-black/20 px-4">
+      <nav className="flex border-b border-terminal-border bg-black/20 px-4">
         {subTabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id)}
             className={`relative px-4 py-3 text-[11px] font-medium uppercase tracking-widest transition-all ${
               activeSubTab === tab.id
-                ? 'text-primary border-primary border-b'
+                ? 'border-b border-primary text-primary'
                 : 'border-b border-transparent text-slate-600 hover:text-slate-400'
             }`}>
             {tab.label}
             {activeSubTab === tab.id && (
-              <span className="bg-primary absolute bottom-0 left-0 h-[1px] w-full blur-[2px]" />
+              <span className="absolute bottom-0 left-0 h-[1px] w-full bg-primary blur-[2px]" />
             )}
             {tab.id === 'artifacts' && activeSubTab !== 'artifacts' && (
-              <span className="bg-primary/60 ml-2 inline-block h-1 w-1 rounded-full" />
+              <span className="ml-2 inline-block h-1 w-1 rounded-full bg-primary/60" />
             )}
           </button>
         ))}

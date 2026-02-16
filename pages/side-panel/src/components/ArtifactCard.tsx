@@ -153,7 +153,7 @@ export const ArtifactCard = ({
                             e.stopPropagation();
                             onStartWorker?.(artifact);
                           }}
-                          className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
+                          className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-primary hover:underline">
                           {t('commonReload')}
                         </button>
                         <button
@@ -180,7 +180,7 @@ export const ArtifactCard = ({
                         e.stopPropagation();
                         onViewWorker?.(artifact);
                       }}
-                      className="hover:text-primary font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:underline">
+                      className="font-mono text-[10px] uppercase tracking-tighter text-slate-500 underline-offset-4 transition-all hover:text-primary hover:underline">
                       {t('commonView')}
                     </button>
                   </div>
