@@ -110,32 +110,32 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
         {!adding && (
           <button
             onClick={() => setAdding(true)}
-            className="text-primary font-mono text-[10px] uppercase tracking-widest transition-colors hover:text-white">
+            className="font-mono text-[10px] uppercase tracking-widest text-primary transition-colors hover:text-white">
             {t('envAddButton')}
           </button>
         )}
       </div>
 
       {adding && (
-        <div className="border-terminal-border space-y-2 border bg-black/20 p-3">
+        <div className="space-y-2 border border-terminal-border bg-black/20 p-3">
           <input
             value={newKey}
             onChange={e => setNewKey(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
             placeholder={t('envKeyPlaceholder')}
-            className="bg-background-dark border-terminal-border w-full border px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
+            className="w-full border border-terminal-border bg-background-dark px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
           />
           <input
             type="password"
             value={newValue}
             onChange={e => setNewValue(e.target.value)}
             placeholder={t('envValuePlaceholder')}
-            className="bg-background-dark border-terminal-border w-full border px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
+            className="w-full border border-terminal-border bg-background-dark px-3 py-1.5 font-mono text-[11px] text-slate-300 placeholder-slate-700"
           />
           <div className="flex gap-2">
             <button
               onClick={handleAdd}
               disabled={!newKey.trim()}
-              className="bg-primary/20 text-primary border-primary/30 hover:bg-primary/30 border px-3 py-1 font-mono text-[10px] uppercase tracking-widest transition-colors disabled:opacity-40">
+              className="border border-primary/30 bg-primary/20 px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-primary transition-colors hover:bg-primary/30 disabled:opacity-40">
               {t('commonSave')}
             </button>
             <button
@@ -144,7 +144,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
                 setNewKey('');
                 setNewValue('');
               }}
-              className="border-terminal-border border px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300">
+              className="border border-terminal-border px-3 py-1 font-mono text-[10px] uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300">
               {t('commonCancel')}
             </button>
           </div>
@@ -158,7 +158,7 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
       ) : (
         <div className="space-y-1">
           {entries.map(([key, value]) => (
-            <div key={key} className="border-terminal-border flex items-center gap-2 border bg-black/20 px-3 py-2">
+            <div key={key} className="flex items-center gap-2 border border-terminal-border bg-black/20 px-3 py-2">
               <span className="min-w-0 flex-shrink-0 font-mono text-[11px] font-medium text-slate-300">{key}</span>
               <span className="text-slate-700">=</span>
 
@@ -173,11 +173,11 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
                       if (e.key === 'Enter') handleEditSave();
                       if (e.key === 'Escape') setEditingKey(null);
                     }}
-                    className="bg-background-dark border-terminal-border min-w-0 flex-1 border px-2 py-0.5 font-mono text-[11px] text-slate-300"
+                    className="min-w-0 flex-1 border border-terminal-border bg-background-dark px-2 py-0.5 font-mono text-[11px] text-slate-300"
                   />
                   <button
                     onClick={handleEditSave}
-                    className="text-primary text-[14px] transition-colors hover:text-white">
+                    className="text-[14px] text-primary transition-colors hover:text-white">
                     <span className="material-symbols-outlined text-[14px]">check</span>
                   </button>
                   <button

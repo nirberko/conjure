@@ -159,7 +159,7 @@ export const ProviderSettings = () => {
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="hover:text-primary absolute inset-y-0 right-0 flex items-center text-slate-600 transition-colors">
+                className="absolute inset-y-0 right-0 flex items-center text-slate-600 transition-colors hover:text-primary">
                 <span className="material-symbols-outlined text-[16px]">
                   {showKey ? 'visibility_off' : 'visibility'}
                 </span>
@@ -232,12 +232,12 @@ export const ProviderSettings = () => {
       <footer className="bg-background-dark p-6">
         <button
           onClick={saveSettings}
-          className="bg-primary flex w-full items-center justify-center gap-2 py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:brightness-110">
+          className="flex w-full items-center justify-center gap-2 bg-primary py-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-all hover:brightness-110">
           {saved ? t('providerSaved') : t('providerSaveButton')}
         </button>
 
         <div className="mt-6 flex items-center justify-between">
-          <span className="hover:text-primary cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors">
+          <span className="cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors hover:text-primary">
             {t('providerDocs')}
           </span>
           <div className="flex items-center gap-1">
@@ -246,7 +246,7 @@ export const ProviderSettings = () => {
               {t('providerSystemReady')}
             </span>
           </div>
-          <span className="hover:text-primary cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors">
+          <span className="cursor-pointer text-[9px] font-bold uppercase tracking-widest text-slate-600 transition-colors hover:text-primary">
             {t('providerSecurity')}
           </span>
         </div>

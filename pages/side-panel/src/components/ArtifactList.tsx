@@ -102,7 +102,7 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
       </main>
 
       {/* Footer */}
-      <footer className="border-terminal-border border-t bg-black/40 p-4">
+      <footer className="border-t border-terminal-border bg-black/40 p-4">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

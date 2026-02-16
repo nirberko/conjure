@@ -75,7 +75,7 @@ export const UserInputForm = ({ fields, title, submitLabel = 'Submit', onSubmit,
             value={values[field.name]}
             onChange={e => handleChange(field.name, e.target.value)}
             placeholder={field.placeholder}
-            className={`font-display w-full rounded border bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-slate-500 ${
+            className={`w-full rounded border bg-slate-800/60 px-3 py-2 font-display text-sm text-slate-200 placeholder-slate-600 outline-none transition-colors focus:border-slate-500 ${
               errors[field.name] ? 'border-red-500/60' : 'border-slate-700'
             }`}
           />

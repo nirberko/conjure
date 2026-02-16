@@ -28,7 +28,7 @@ const markdownComponents: Components = {
   },
   pre: ({ children }) => <>{children}</>,
   blockquote: ({ children }) => (
-    <blockquote className="border-primary/50 border-l-2 pl-3 text-slate-500">{children}</blockquote>
+    <blockquote className="border-l-2 border-primary/50 pl-3 text-slate-500">{children}</blockquote>
   ),
   a: ({ href, children }) => (
     <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">

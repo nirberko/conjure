@@ -112,7 +112,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
         if (e.key === 'Enter' || e.key === ' ') onCancel();
       }}>
       <div
-        className="border-terminal-border bg-background-dark mx-4 max-h-[80vh] w-full max-w-md overflow-y-auto border p-5"
+        className="mx-4 max-h-[80vh] w-full max-w-md overflow-y-auto border border-terminal-border bg-background-dark p-5"
         role="presentation"
         onClick={e => e.stopPropagation()}>
         <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-white">
@@ -129,7 +129,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
                 <div className="mb-1 flex items-center justify-between">
                   <label className="font-mono text-[9px] uppercase tracking-widest text-slate-500">
                     {key}
-                    {isPk && <span className="text-primary ml-1">PK</span>}
+                    {isPk && <span className="ml-1 text-primary">PK</span>}
                   </label>
                   <div className="flex items-center gap-2">
                     <select
@@ -140,7 +140,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
                           [key]: e.target.value as 'string' | 'number' | 'boolean' | 'json',
                         }))
                       }
-                      className="bg-background-dark border-terminal-border border px-1 py-0.5 font-mono text-[9px] text-slate-500">
+                      className="border border-terminal-border bg-background-dark px-1 py-0.5 font-mono text-[9px] text-slate-500">
                       <option value="string">string</option>
                       <option value="number">number</option>
                       <option value="boolean">boolean</option>
@@ -200,7 +200,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
           <button
             onClick={addField}
             disabled={!newFieldName.trim()}
-            className="text-primary font-mono text-[10px] uppercase tracking-widest disabled:opacity-30">
+            className="font-mono text-[10px] uppercase tracking-widest text-primary disabled:opacity-30">
             {t('commonAdd')}
           </button>
         </div>
@@ -211,7 +211,7 @@ export const DatabaseRowEditor = ({ row, primaryKey, onSave, onCancel }: Databas
         <div className="mt-5 flex gap-4">
           <button
             onClick={handleSave}
-            className="text-primary font-mono text-[10px] uppercase tracking-widest underline-offset-4 transition-all hover:underline">
+            className="font-mono text-[10px] uppercase tracking-widest text-primary underline-offset-4 transition-all hover:underline">
             {isInsert ? t('commonInsert') : t('commonSave')}
           </button>
           <button
