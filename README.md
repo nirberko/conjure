@@ -7,6 +7,10 @@
 
 **AI-Powered Component Injector - Enhance any website with custom UI components**
 
+## Why "Conjure"?
+
+*Conjure* means to summon something into existence, as if by magic - describe a UI component in plain English and watch the AI bring it to life on any webpage. No boilerplate, no manual coding; just intent and a result.
+
 Conjure is a Chrome extension that lets you create and inject custom React components, JavaScript scripts, CSS styles, and background workers into any website using AI. Describe what you want in natural language; the AI agent generates code, deploys it to the page (or runs it in a persistent worker), and re-injects it automatically on every visit to matching URLs.
 
 ---
@@ -52,7 +56,7 @@ This repository is a **Chrome extension monorepo** for **Conjure**. It is built 
 
 Modern websites are not always built the way you need them to be. Maybe you want a dark mode toggle on a site that doesn't have one, a word counter on a text editor, a price tracker overlay on a shopping page, or a custom dashboard widget on your project management tool.
 
-Conjure makes this possible without writing code yourself. You open the side panel, tell the AI what you want ("Add a floating timer to the bottom-right corner"), pick a target element on the page, and the AI generates a fully functional React component, JavaScript snippet, or CSS rule. It gets injected into the page instantly, and Conjure remembers it — re-injecting it automatically every time you visit a matching URL.
+Conjure makes this possible without writing code yourself. You open the side panel, tell the AI what you want ("Add a floating timer to the bottom-right corner"), pick a target element on the page, and the AI generates a fully functional React component, JavaScript snippet, or CSS rule. It gets injected into the page instantly, and Conjure remembers it - re-injecting it automatically every time you visit a matching URL.
 
 You work by creating **extensions** (scoped to URL patterns). Each extension can have multiple **artifacts**: React components, JS scripts, CSS, or **background workers**. The AI agent (LangGraph) handles the full lifecycle: planning, generating, deploying, and verifying artifacts. Background workers run in a persistent offscreen document and can react to storage changes or run on a schedule.
 
@@ -60,31 +64,31 @@ You work by creating **extensions** (scoped to URL patterns). Each extension can
 
 ## Key Features
 
-- **AI-powered generation** — Describe UI components or scripts in plain English; the AI writes the code.
-- **Multi-provider AI support** — OpenAI, Anthropic, and Google Gemini with configurable models.
-- **Autonomous agent workflow** — A LangGraph-based agent that can plan, generate, edit, deploy, inspect, and verify artifacts without manual intervention.
-- **Live injection** — React components, JavaScript (IIFE), and CSS are injected directly into pages in real time.
-- **URL pattern matching** — Artifacts auto-inject on matching pages using wildcard URL patterns (e.g., `https://*.github.com/*`).
-- **Element picker** — Visual CSS selector picker to target specific DOM elements for injection.
-- **DOM inspection tools** — The agent can inspect DOM structure, read page text, and query computed styles to make informed decisions.
-- **Background workers** — The agent can generate background-worker artifacts that run in Chrome's offscreen document, with access to extension storage and optional triggers (e.g. storage change, interval).
-- **Persistent storage** — All extensions, artifacts, conversations, and settings are stored locally in IndexedDB via Dexie.
-- **Version history** — Artifacts maintain version history with rollback support.
-- **Per-component data** — Injected components can persist key-value data per component per URL via context.
-- **Side panel UI** — A single interface in Chrome's side panel: extension list, per-extension chat + artifacts, and AI provider settings.
+- **AI-powered generation** - Describe UI components or scripts in plain English; the AI writes the code.
+- **Multi-provider AI support** - OpenAI, Anthropic, and Google Gemini with configurable models.
+- **Autonomous agent workflow** - A LangGraph-based agent that can plan, generate, edit, deploy, inspect, and verify artifacts without manual intervention.
+- **Live injection** - React components, JavaScript (IIFE), and CSS are injected directly into pages in real time.
+- **URL pattern matching** - Artifacts auto-inject on matching pages using wildcard URL patterns (e.g., `https://*.github.com/*`).
+- **Element picker** - Visual CSS selector picker to target specific DOM elements for injection.
+- **DOM inspection tools** - The agent can inspect DOM structure, read page text, and query computed styles to make informed decisions.
+- **Background workers** - The agent can generate background-worker artifacts that run in Chrome's offscreen document, with access to extension storage and optional triggers (e.g. storage change, interval).
+- **Persistent storage** - All extensions, artifacts, conversations, and settings are stored locally in IndexedDB via Dexie.
+- **Version history** - Artifacts maintain version history with rollback support.
+- **Per-component data** - Injected components can persist key-value data per component per URL via context.
+- **Side panel UI** - A single interface in Chrome's side panel: extension list, per-extension chat + artifacts, and AI provider settings.
 
 ---
 
 ## How It Works
 
-1. **Open Conjure** — Click the extension icon or use the popup to open the side panel.
-2. **Create an Extension** — Give it a name, URL pattern, and description.
-3. **Chat with the Agent** — Describe what you want. The agent uses tools to:
+1. **Open Conjure** - Click the extension icon or use the popup to open the side panel.
+2. **Create an Extension** - Give it a name, URL pattern, and description.
+3. **Chat with the Agent** - Describe what you want. The agent uses tools to:
    - Inspect the current page's DOM and styles
    - Generate React components, JS scripts, CSS, or background workers
    - Deploy artifacts to the page (or start background workers in the offscreen document)
    - Verify that the deployment worked correctly
-4. **Automatic re-injection** — When you navigate to a matching URL, the service worker re-injects all enabled page artifacts; background workers keep running until you stop them.
+4. **Automatic re-injection** - When you navigate to a matching URL, the service worker re-injects all enabled page artifacts; background workers keep running until you stop them.
 
 ---
 
@@ -99,19 +103,19 @@ The extension UI is split between a **popup** and the **side panel**.
 
 ### Side panel layout
 
-- **Header** — Shows "Conjure" and anchors the main tabs.
+- **Header** - Shows "Conjure" and anchors the main tabs.
 - **Main tabs**
-  - **Extensions** — List of all extensions (name, URL pattern, description). Each card has an enable/disable toggle and delete. You can create a new extension with name, URL pattern (e.g. `https://*.github.com/*`), and optional description. Selecting an extension opens its **detail view**.
-  - **Settings** — AI provider (OpenAI, Anthropic, Google), API key(s), and model selection. Settings are persisted in IndexedDB.
+  - **Extensions** - List of all extensions (name, URL pattern, description). Each card has an enable/disable toggle and delete. You can create a new extension with name, URL pattern (e.g. `https://*.github.com/*`), and optional description. Selecting an extension opens its **detail view**.
+  - **Settings** - AI provider (OpenAI, Anthropic, Google), API key(s), and model selection. Settings are persisted in IndexedDB.
 
 ### Extension detail view
 
 When you open an extension from the list:
 
-- **Header** — Back button, extension name, and URL pattern.
+- **Header** - Back button, extension name, and URL pattern.
 - **Sub-tabs**
-  - **Chat** — Agent chat panel. You type what you want (e.g. "Add a floating timer"); the agent uses tools to inspect the page, generate artifacts (React, JS, CSS, or background worker), deploy them, and verify. Messages show user/assistant bubbles and expandable tool-call blocks (name, args, result, status).
-  - **Artifacts** — List of all artifacts for this extension. Each artifact card shows type (react-component, js-script, css, background-worker), name, and actions: deploy to page, remove from page, and for background workers: start / stop / reload. Worker status (running, error) is shown when applicable.
+  - **Chat** - Agent chat panel. You type what you want (e.g. "Add a floating timer"); the agent uses tools to inspect the page, generate artifacts (React, JS, CSS, or background worker), deploy them, and verify. Messages show user/assistant bubbles and expandable tool-call blocks (name, args, result, status).
+  - **Artifacts** - List of all artifacts for this extension. Each artifact card shows type (react-component, js-script, css, background-worker), name, and actions: deploy to page, remove from page, and for background workers: start / stop / reload. Worker status (running, error) is shown when applicable.
 
 ### Content script (no visible UI by default)
 
@@ -130,10 +134,10 @@ conjure/
 │   ├── src/background/        # Background service worker (message router, DB, agent, URL matcher, worker manager, offscreen)
 │   └── public/                # Icons and static assets
 ├── pages/                     # Extension pages and scripts
-│   ├── popup/                 # Toolbar popup — "Open Side Panel" entry point
-│   ├── side-panel/            # Main UI — Extensions list, Extension detail (Chat + Artifacts), Settings
-│   ├── content/               # Content script (matches all http/https) — injector, DOM tools, picker
-│   ├── offscreen/             # Offscreen document — runs background-worker artifacts with DOM/API access
+│   ├── popup/                 # Toolbar popup - "Open Side Panel" entry point
+│   ├── side-panel/            # Main UI - Extensions list, Extension detail (Chat + Artifacts), Settings
+│   ├── content/               # Content script (matches all http/https) - injector, DOM tools, picker
+│   ├── offscreen/             # Offscreen document - runs background-worker artifacts with DOM/API access
 │   └── sandbox/               # Sandboxed page for isolated script execution (if used)
 ├── packages/                  # Shared internal packages
 │   ├── shared/                # Types, Dexie DB, migrations, AI providers, LangGraph agent, HOCs, hooks, utils
@@ -148,7 +152,7 @@ conjure/
 │   ├── dev-utils/             # Manifest parser, build utilities
 │   ├── module-manager/        # CLI to enable/disable extension modules
 │   └── zipper/                # Package dist into a zip for distribution
-└── dist/                      # Build output — load this directory in Chrome as unpacked extension
+└── dist/                      # Build output - load this directory in Chrome as unpacked extension
 ```
 
 ### Tech Stack
@@ -175,11 +179,11 @@ conjure/
 The project uses **pnpm workspaces** with **Turborepo** for orchestrating builds across packages. Each package under `packages/` and `pages/` is an independent workspace with its own `package.json` and `tsconfig.json`. Turborepo handles dependency ordering, caching, and parallel execution.
 
 Key scripts:
-- `pnpm dev` — Start development with HMR and watch mode
-- `pnpm build` — Production build into `dist/`
-- `pnpm zip` — Build and package into a distributable zip
-- `pnpm lint` — Lint all packages
-- `pnpm module-manager` — Interactive tool to enable/disable modules
+- `pnpm dev` - Start development with HMR and watch mode
+- `pnpm build` - Production build into `dist/`
+- `pnpm zip` - Build and package into a distributable zip
+- `pnpm lint` - Lint all packages
+- `pnpm module-manager` - Interactive tool to enable/disable modules
 
 ### Extension Manifest (MV3)
 
@@ -231,8 +235,8 @@ A migration (`migrateV1ToV2`) converts legacy components into the extension/arti
 
 The agent is built on **LangGraph** with a `StateGraph` containing two core nodes:
 
-1. **`orchestrator`** — The LLM-powered reasoning node that decides which tools to call
-2. **`tool_executor`** — Executes the selected tool and returns results
+1. **`orchestrator`** - The LLM-powered reasoning node that decides which tools to call
+2. **`tool_executor`** - Executes the selected tool and returns results
 
 Available agent tools:
 
@@ -260,21 +264,21 @@ Artifacts of type **background-worker** are JavaScript that runs in a persistent
 
 Conjure injects code into pages through multiple mechanisms:
 
-1. **React components** — A React runtime (`React` + `ReactDOM`) is injected into the page's `MAIN` world as `window.__WEBFORGE__`. Components are written as JSX, transpiled with **Sucrase** at runtime, and rendered into dynamically created mount points.
+1. **React components** - A React runtime (`React` + `ReactDOM`) is injected into the page's `MAIN` world as `window.__WEBFORGE__`. Components are written as JSX, transpiled with **Sucrase** at runtime, and rendered into dynamically created mount points.
 
-2. **JavaScript scripts** — Plain JS wrapped as IIFEs, executed in the page's `MAIN` world via `chrome.scripting.executeScript`.
+2. **JavaScript scripts** - Plain JS wrapped as IIFEs, executed in the page's `MAIN` world via `chrome.scripting.executeScript`.
 
-3. **CSS** — Style rules injected as `<style>` elements in the page.
+3. **CSS** - Style rules injected as `<style>` elements in the page.
 
-4. **Component context** — Each injected component receives a `context` object with:
-   - `getData()` / `setData()` — Persistent key-value storage per component per URL
-   - `pageUrl` — The current page URL
+4. **Component context** - Each injected component receives a `context` object with:
+   - `getData()` / `setData()` - Persistent key-value storage per component per URL
+   - `pageUrl` - The current page URL
 
 The content script also provides:
-- **Element picker** — Highlights elements on hover and returns CSS selectors on click
-- **DOM serialization** — Converts DOM subtrees into a readable format for the AI agent
-- **Style inspection** — Reads computed styles for specific CSS properties
-- **Deployment verification** — Checks if injected elements exist in the DOM
+- **Element picker** - Highlights elements on hover and returns CSS selectors on click
+- **DOM serialization** - Converts DOM subtrees into a readable format for the AI agent
+- **Style inspection** - Reads computed styles for specific CSS properties
+- **Deployment verification** - Checks if injected elements exist in the DOM
 
 ---
 
@@ -295,7 +299,7 @@ Configure your preferred provider and API key in the **Settings** tab of the sid
 ### Prerequisites
 
 - **Node.js** >= 22.15.1 (see `.nvmrc`)
-- **pnpm** 10.11.0 — Install with `npm install -g pnpm`
+- **pnpm** 10.11.0 - Install with `npm install -g pnpm`
 - **Chrome** (or Firefox for limited support)
 
 ### Installation
@@ -351,11 +355,11 @@ Load as a temporary add-on from `about:debugging#/runtime/this-firefox`.
 
 ## Usage
 
-1. **Open the extension** — Click the Conjure icon; the side panel opens (or open it via the popup).
-2. **Configure AI** — In **Settings**, choose provider (OpenAI, Anthropic, Google), enter API key(s), and select a model. Save.
-3. **Create an extension** — In **Extensions**, click "New Extension", set name and URL pattern (e.g. `https://*.github.com/*`), optionally description, then Create.
-4. **Chat with the agent** — Open an extension to see **Chat** and **Artifacts**. In Chat, describe what you want (e.g. "Add a dark mode toggle"). The agent will inspect the page, generate artifacts (React, JS, CSS, or background worker), deploy them, and verify.
-5. **Manage artifacts** — In **Artifacts**, deploy or remove artifacts from the page; for background workers, start, stop, or reload and see status.
+1. **Open the extension** - Click the Conjure icon; the side panel opens (or open it via the popup).
+2. **Configure AI** - In **Settings**, choose provider (OpenAI, Anthropic, Google), enter API key(s), and select a model. Save.
+3. **Create an extension** - In **Extensions**, click "New Extension", set name and URL pattern (e.g. `https://*.github.com/*`), optionally description, then Create.
+4. **Chat with the agent** - Open an extension to see **Chat** and **Artifacts**. In Chat, describe what you want (e.g. "Add a dark mode toggle"). The agent will inspect the page, generate artifacts (React, JS, CSS, or background worker), deploy them, and verify.
+5. **Manage artifacts** - In **Artifacts**, deploy or remove artifacts from the page; for background workers, start, stop, or reload and see status.
 
 ---
 
