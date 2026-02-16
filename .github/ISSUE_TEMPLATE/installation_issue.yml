@@ -1,0 +1,90 @@
+name: Installation / Setup Issue
+description: Report problems with installing, building, or setting up Conjure
+title: "[Setup]: "
+labels: ["installation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before You Continue
+
+        Please check these resources first:
+
+        1. **[Getting Started guide](https://github.com/nirberko/conjure#getting-started)** in the README
+        2. **[GitHub Discussions](https://github.com/nirberko/conjure/discussions)** for community help
+
+        If you've tried the above and still need help, please fill out the form below.
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      description: What kind of setup issue are you experiencing?
+      options:
+        - Building from source (dev or production)
+        - Loading the extension in Chrome
+        - AI provider configuration (API keys)
+        - Extension permissions or site access
+        - Other (please describe below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: What is the issue?
+      description: Describe the installation or setup problem you're experiencing.
+      placeholder: |
+        Example: "pnpm dev fails with a module resolution error" or "The extension won't load in Chrome"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Error Output
+      description: |
+        Please provide relevant logs or error messages.
+
+        **Where to find them:**
+        - Terminal output from `pnpm dev` or `pnpm build`
+        - Chrome extension errors page (chrome://extensions → Errors)
+        - Browser console (F12 → Console)
+      placeholder: Paste your logs here.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Tell us about your setup.
+      placeholder: |
+        - OS: macOS 14 / Windows 11 / Ubuntu 22.04
+        - Node.js version: (run `node -v`)
+        - pnpm version: (run `pnpm -v`)
+        - Browser: Chrome 120 / Brave 1.62
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful.
+      placeholder: |
+        - Are you behind a corporate proxy or firewall?
+        - Have you made any modifications to the project?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      options:
+        - label: I read the [Getting Started guide](https://github.com/nirberko/conjure#getting-started) in the README
+          required: false
+        - label: I searched existing issues to see if this was already reported
+          required: true
