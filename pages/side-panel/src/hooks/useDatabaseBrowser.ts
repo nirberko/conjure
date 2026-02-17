@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 export interface TableInfo {
   name: string;
@@ -15,6 +15,7 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
   const [pageSize] = useState(20);
   const [loadingTables, setLoadingTables] = useState(false);
   const [loadingRows, setLoadingRows] = useState(false);
+  const extensionIdRef = useRef(extensionId);
 
   const fetchTables = useCallback(async (dbId: string) => {
     setLoadingTables(true);
@@ -47,6 +48,11 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
     [pageSize],
   );
 
+  // Keep ref in sync (updated in effect to satisfy react-hooks/refs rule)
+  useEffect(() => {
+    extensionIdRef.current = extensionId;
+  }, [extensionId]);
+
   // Reset selection when the extension changes
   useEffect(() => {
     setTables([]);
@@ -62,15 +68,17 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
     fetchTables(extensionId);
   }, [extensionId, fetchTables, isActive]);
 
-  // Load rows when table or page changes, or tab re-activates
+  // Load rows when table or page changes, or tab re-activates.
+  // extensionId is read via ref — the reset effect above clears selectedTable
+  // on extension change, which re-triggers this effect with the correct id.
   useEffect(() => {
     if (selectedTable && isActive !== false) {
-      fetchRows(selectedTable, page, extensionId);
+      fetchRows(selectedTable, page, extensionIdRef.current);
     } else if (!selectedTable) {
       setRows([]);
       setTotalCount(0);
     }
-  }, [selectedTable, page, extensionId, fetchRows, isActive]);
+  }, [selectedTable, page, fetchRows, isActive]);
 
   const selectTable = useCallback((tableName: string) => {
     setSelectedTable(tableName);

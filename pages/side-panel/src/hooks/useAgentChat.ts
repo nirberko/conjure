@@ -5,7 +5,7 @@ import {
   clearAgentConversation,
   REQUEST_USER_INPUT_TOOL_NAME,
 } from '@extension/shared';
-import { useReducer, useCallback, useEffect } from 'react';
+import { useReducer, useCallback, useEffect, useRef } from 'react';
 import type {
   Artifact,
   AgentChatMessage,
@@ -423,17 +423,31 @@ const chatReducerWithEffects = (state: ChatState, action: ChatAction): ReducerRe
 
 const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   const [newState, ops] = chatReducerWithEffects(state, action);
+  // LOADED replaces all state for a (possibly new) extension — discard stale ops
+  if (action.type === 'LOADED') {
+    return { ...newState, _pendingOps: [] };
+  }
   return { ...newState, _pendingOps: [...newState._pendingOps, ...ops] };
 };
 
 export const useAgentChat = (extensionId: string) => {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
+  // Track the extensionId that pending ops belong to, updated only in effects.
+  const opsExtensionIdRef = useRef(extensionId);
+
   // --- Drain persistence effects after each render ---
   useEffect(() => {
     if (state._pendingOps.length === 0) return;
     const ops = state._pendingOps;
     dispatch({ type: 'DRAIN_OPS' });
+
+    // If extensionId changed since ops were queued, discard them
+    if (opsExtensionIdRef.current !== extensionId) {
+      opsExtensionIdRef.current = extensionId;
+      return;
+    }
+
     for (const op of ops) {
       switch (op.op) {
         case 'add':
@@ -460,8 +474,8 @@ export const useAgentChat = (extensionId: string) => {
     chrome.runtime
       .sendMessage({ type: 'GET_AGENT_STATUS', payload: { extensionId } })
       .then((response: { isRunning?: boolean }) => {
-        if (!cancelled && response?.isRunning) {
-          dispatch({ type: 'AGENT_STATUS', isRunning: true });
+        if (!cancelled) {
+          dispatch({ type: 'AGENT_STATUS', isRunning: !!response?.isRunning });
         }
       })
       .catch(err => console.error('[Conjure] Failed to query agent status:', err));
