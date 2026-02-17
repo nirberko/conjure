@@ -146,10 +146,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           await chrome.scripting.executeScript({
             target: { tabId },
             world: 'MAIN',
-            func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
-              const _WF = (window as unknown as Record<string, unknown>).__CONJURE__ as
-                | Record<string, unknown>
-                | undefined;
+            func: async (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
+              // Wait for React runtime to be available (executeScript may resolve before the IIFE runs)
+              let _WF: Record<string, unknown> | undefined;
+              for (let i = 0; i < 50; i++) {
+                _WF = (window as unknown as Record<string, unknown>).__CONJURE__ as Record<string, unknown> | undefined;
+                if (_WF) break;
+                await new Promise(r => setTimeout(r, 50));
+              }
               if (!_WF) {
                 console.error('[Conjure] React runtime not loaded');
                 return;
@@ -396,6 +400,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           mountId,
           componentId,
           extensionId: extId,
+          dependencies,
         } = message.payload as {
           code: string;
           mountId: string;
@@ -407,23 +412,106 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const tab = await chrome.tabs.get(tabId);
           const pageUrl = tab.url || '';
 
-          let transformedCode = code;
+          // Build dependency URL map — use ?deps to rewrite bare 'react' specifiers to full URLs
+          const REACT_VERSION = '19.1.0';
+          const reactUrl = `https://esm.sh/react@${REACT_VERSION}`;
+          const reactDomUrl = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
+          const depUrls: Record<string, string> = {};
+          if (dependencies) {
+            for (const [pkg, version] of Object.entries(dependencies)) {
+              depUrls[pkg] = `https://esm.sh/${pkg}@${version}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+            }
+          }
+
+          // Parse import statements, strip them, and convert to __deps__ destructuring
+          const destructLines: string[] = [];
+          const strippedCode = code.replace(
+            /^\s*import\s+(.+?)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/gm,
+            (_match: string, clause: string, specifier: string) => {
+              // Skip react/react-dom — provided via runtime
+              if (specifier === 'react' || specifier.startsWith('react-dom')) return '';
+              // Skip unknown specifiers (not in dependencies)
+              if (!depUrls[specifier]) return '';
+
+              const safeKey = JSON.stringify(specifier);
+              clause = clause.trim();
+
+              if (clause.startsWith('* as ')) {
+                destructLines.push(`var ${clause.slice(5).trim()} = __deps__[${safeKey}];`);
+              } else if (clause.startsWith('{')) {
+                destructLines.push(`var ${clause} = __deps__[${safeKey}];`);
+              } else if (clause.includes(',')) {
+                const commaIdx = clause.indexOf(',');
+                const defaultName = clause.slice(0, commaIdx).trim();
+                const rest = clause.slice(commaIdx + 1).trim();
+                destructLines.push(`var ${defaultName} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+                if (rest.startsWith('{')) {
+                  destructLines.push(`var ${rest} = __deps__[${safeKey}];`);
+                }
+              } else {
+                destructLines.push(`var ${clause} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+              }
+              return '';
+            },
+          );
+
+          let transformedCode = destructLines.join('\n') + '\n' + strippedCode;
           try {
-            transformedCode = transform(code, { transforms: ['jsx'] }).code;
+            transformedCode = transform(transformedCode, { transforms: ['jsx'] }).code;
           } catch {
             // Code may already be plain JS
+          }
+
+          // Auto-append return if missing
+          const trimmed = transformedCode.trim();
+          if (!trimmed.match(/return\s+\w+\s*;?\s*$/)) {
+            const fnMatch = trimmed.match(/function\s+([A-Z]\w*)\s*\(/);
+            if (fnMatch) {
+              transformedCode = transformedCode + '\nreturn ' + fnMatch[1] + ';';
+            }
           }
 
           await chrome.scripting.executeScript({
             target: { tabId },
             world: 'MAIN',
-            func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
-              // Context setup — expose on global for module to pick up
-              const ctxGlobal = ((window as unknown as Record<string, unknown>).__CONJURE_CTX__ ??= {}) as Record<
-                string,
-                unknown
-              >;
+            func: async (
+              componentCode: string,
+              mId: string,
+              cId: string,
+              pUrl: string,
+              eId: string,
+              depUrlMap: Record<string, string>,
+              rUrl: string,
+              rdUrl: string,
+            ) => {
+              // Load React + ReactDOM from esm.sh (same instance used by dependencies via ?deps)
+              let React: unknown;
+              let ReactDOM: unknown;
+              const __deps__: Record<string, unknown> = {};
+              try {
+                const [reactMod, reactDomMod, ...depMods] = await Promise.all([
+                  import(/* webpackIgnore: true */ rUrl),
+                  import(/* webpackIgnore: true */ rdUrl),
+                  ...Object.values(depUrlMap).map(url => import(/* webpackIgnore: true */ url)),
+                ]);
+                React = reactMod.default || reactMod;
+                ReactDOM = reactDomMod;
+                Object.keys(depUrlMap).forEach((key, i) => {
+                  __deps__[key] = depMods[i];
+                });
+              } catch (err) {
+                console.error('[Conjure] Failed to load dependencies:', err);
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Failed to load dependencies — ' +
+                    ((err as Error).message || String(err)).replace(/</g, '&lt;') +
+                    '</div>';
+                }
+                return;
+              }
 
+              // Build context
               let _nextReqId = 0;
               const extDbCall = (action: string, payload: Record<string, unknown>): Promise<unknown> =>
                 new Promise((resolve, reject) => {
@@ -493,55 +581,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                   return ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
                 },
               };
+              const context = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db, env };
 
-              const ctxKey = cId + '_' + mId;
-              ctxGlobal[ctxKey] = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db, env };
+              // Execute component via new Function (bypasses page CSP from extension context)
+              try {
+                const componentFn = new Function('React', 'ReactDOM', 'context', '__deps__', componentCode);
+                const ComponentResult = componentFn(React, ReactDOM, context, __deps__);
 
-              // Extract component name from return statement
-              const nameMatch =
-                componentCode.match(/return\s+([A-Z]\w*)\s*;?\s*$/) ||
-                componentCode.match(/function\s+([A-Z]\w*)\s*\(/);
-              const componentName = nameMatch ? nameMatch[1] : '_Component';
+                if (!ComponentResult) {
+                  throw new Error('Component did not return a valid React component');
+                }
 
-              // Build module code
-              const moduleCode = [
-                "import React from 'react';",
-                "import ReactDOM from 'react-dom/client';",
-                '',
-                `const context = window.__CONJURE_CTX__['${ctxKey}'];`,
-                '',
-                'const _getComponent = (function(React, ReactDOM, context) {',
-                componentCode,
-                '})(React, ReactDOM, context);',
-                '',
-                `const _Component = _getComponent || ${componentName};`,
-                `const mountEl = document.getElementById('${mId}');`,
-                'if (mountEl && _Component) {',
-                '  const root = ReactDOM.createRoot(mountEl);',
-                '  root.render(React.createElement(_Component, { context }));',
-                '} else if (mountEl) {',
-                '  mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component did not return a valid component.</div>\';',
-                '}',
-              ].join('\n');
-
-              // Execute as module via Blob URL
-              const blob = new Blob([moduleCode], { type: 'text/javascript' });
-              const blobUrl = URL.createObjectURL(blob);
-              const script = document.createElement('script');
-              script.type = 'module';
-              script.src = blobUrl;
-              script.onerror = () => {
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  const root = (
+                    ReactDOM as { createRoot: (el: HTMLElement) => { render: (el: unknown) => void } }
+                  ).createRoot(mountEl);
+                  root.render(
+                    (React as { createElement: (type: unknown, props: unknown) => unknown }).createElement(
+                      ComponentResult,
+                      { context },
+                    ),
+                  );
+                }
+              } catch (err: unknown) {
+                console.error('[Conjure] Component render error:', err);
                 const mountEl = document.getElementById(mId);
                 if (mountEl) {
                   mountEl.innerHTML =
-                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Module failed to load. Check console for errors.</div>';
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component render error — ' +
+                    (err instanceof Error ? err.message : String(err)).replace(/</g, '&lt;') +
+                    '</div>';
                 }
-                URL.revokeObjectURL(blobUrl);
-              };
-              script.onload = () => URL.revokeObjectURL(blobUrl);
-              document.head.appendChild(script);
+              }
             },
-            args: [transformedCode, mountId, componentId, pageUrl, extId ?? ''],
+            args: [transformedCode, mountId, componentId, pageUrl, extId ?? '', depUrls, reactUrl, reactDomUrl],
           });
         }
         return { success: true };

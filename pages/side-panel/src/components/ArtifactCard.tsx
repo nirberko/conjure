@@ -141,6 +141,19 @@ export const ArtifactCard = ({
               <p className="font-mono text-[10px] text-slate-500">XPath: {artifact.elementXPath}</p>
             )}
 
+            {/* Dependencies */}
+            {artifact.dependencies && Object.keys(artifact.dependencies).length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(artifact.dependencies).map(([pkg, version]) => (
+                  <span
+                    key={pkg}
+                    className="sharp-badge border border-violet-500/30 bg-violet-500/10 px-1.5 py-0.5 font-mono text-[9px] text-violet-400">
+                    {pkg}@{version}
+                  </span>
+                ))}
+              </div>
+            )}
+
             {/* Actions (workers only) */}
             {isWorker && (
               <div className="mt-1 flex items-center justify-between">

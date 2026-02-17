@@ -3,7 +3,7 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
-const resolvePackageVersion = async (
+export const resolvePackageVersion = async (
   packageName: string,
   version?: string,
 ): Promise<{ version: string } | { error: string }> => {
@@ -33,34 +33,50 @@ const resolvePackageVersion = async (
 export const createAddDependencyTool = (ctx: ToolContext) =>
   tool(
     async ({ artifactId, packageName, version }) => {
-      const artifact = await getArtifact(artifactId);
-      if (!artifact) {
-        return JSON.stringify({ success: false, error: `Artifact "${artifactId}" not found` });
-      }
-
       const resolved = await resolvePackageVersion(packageName, version);
 
       if ('error' in resolved) {
         return JSON.stringify({ success: false, error: resolved.error });
       }
 
-      const dependencies = { ...(artifact.dependencies ?? {}), [packageName]: resolved.version };
-      await updateArtifact(artifactId, { dependencies });
+      // If artifactId is provided, update the artifact's dependencies
+      if (artifactId) {
+        const artifact = await getArtifact(artifactId);
+        if (!artifact) {
+          return JSON.stringify({ success: false, error: `Artifact "${artifactId}" not found` });
+        }
 
+        const dependencies = { ...(artifact.dependencies ?? {}), [packageName]: resolved.version };
+        await updateArtifact(artifactId, { dependencies });
+
+        return JSON.stringify({
+          success: true,
+          artifactId,
+          packageName,
+          version: resolved.version,
+          message: `Added ${packageName}@${resolved.version}. You can now use \`import\` statements for this package in your component code.`,
+        });
+      }
+
+      // No artifactId — just resolve and return the version
       return JSON.stringify({
         success: true,
-        artifactId,
         packageName,
         version: resolved.version,
-        message: `Added ${packageName}@${resolved.version}. You can now use \`import\` statements for this package in your component code.`,
+        message: `Resolved ${packageName}@${resolved.version}. Pass { "${packageName}": "${resolved.version}" } in the dependencies parameter when calling generate_react_component.`,
       });
     },
     {
       name: 'add_dependency',
       description:
-        'Resolve and pin an npm package from esm.sh for use in generated React component code. Call this BEFORE generating or editing code that needs the package. After adding a dependency, use standard `import { X } from "package"` syntax in your component code.',
+        'Resolve and pin an npm package version from esm.sh. Call this BEFORE generating or editing code that needs the package. When called without artifactId, returns the resolved version to pass in the `dependencies` parameter of `generate_react_component`. When called with artifactId, also updates that artifact\'s dependency list. After resolving, use standard `import { X } from "package"` syntax in your component code.',
       schema: z.object({
-        artifactId: z.string().describe('The artifact that will use this dependency'),
+        artifactId: z
+          .string()
+          .optional()
+          .describe(
+            'Optional artifact ID to update. If omitted, just resolves and returns the pinned version without updating any artifact.',
+          ),
         packageName: z.string().describe('npm package name (e.g. "recharts", "lodash-es", "date-fns")'),
         version: z
           .string()

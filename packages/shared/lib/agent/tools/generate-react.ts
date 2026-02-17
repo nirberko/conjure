@@ -1,30 +1,65 @@
+import { resolvePackageVersion } from './add-dependency.js';
 import { createArtifact } from '../../db/index.js';
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import type { ToolContext } from '../types.js';
 
+const BUILTIN_SPECIFIERS = new Set(['react', 'react-dom', 'react-dom/client']);
+
+const extractImportedPackages = (code: string): string[] => {
+  const packages = new Set<string>();
+  const importRegex = /^\s*import\s+.+?\s+from\s+['"]([^'"./][^'"]*)['"]\s*;?\s*$/gm;
+  let match;
+  while ((match = importRegex.exec(code)) !== null) {
+    const specifier = match[1];
+    // Get the package name (handle scoped packages like @scope/pkg)
+    const pkgName = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
+    if (!BUILTIN_SPECIFIERS.has(specifier) && !BUILTIN_SPECIFIERS.has(pkgName)) {
+      packages.add(pkgName);
+    }
+  }
+  return [...packages];
+};
+
 export const createGenerateReactTool = (ctx: ToolContext) =>
   tool(
     async ({ name, description, code, elementXPath, dependencies }) => {
+      // Safety net: auto-resolve any imported packages missing from dependencies
+      const importedPackages = extractImportedPackages(code);
+      let resolvedDeps = dependencies ? { ...dependencies } : undefined;
+
+      if (importedPackages.length > 0) {
+        const missing = importedPackages.filter(pkg => !resolvedDeps?.[pkg]);
+        if (missing.length > 0) {
+          resolvedDeps = resolvedDeps || {};
+          const results = await Promise.all(missing.map(pkg => resolvePackageVersion(pkg)));
+          for (let i = 0; i < missing.length; i++) {
+            const result = results[i];
+            if ('version' in result) {
+              resolvedDeps[missing[i]] = result.version;
+            }
+          }
+        }
+      }
+
       const artifact = await createArtifact({
         extensionId: ctx.extensionId,
         type: 'react-component',
         name,
         code,
         elementXPath: elementXPath || undefined,
-        dependencies: dependencies || undefined,
+        dependencies: resolvedDeps,
         enabled: true,
       });
+      const depsInfo = resolvedDeps
+        ? ` Dependencies: ${Object.entries(resolvedDeps)
+            .map(([k, v]) => `${k}@${v}`)
+            .join(', ')}`
+        : '';
       return JSON.stringify({
         success: true,
         artifactId: artifact.id,
-        message: `React component "${name}" created successfully.${description ? ` Description: ${description}` : ''}${
-          dependencies
-            ? ` Dependencies: ${Object.entries(dependencies)
-                .map(([k, v]) => `${k}@${v}`)
-                .join(', ')}`
-            : ''
-        }`,
+        message: `React component "${name}" created successfully.${description ? ` Description: ${description}` : ''}${depsInfo}`,
       });
     },
     {
