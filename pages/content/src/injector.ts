@@ -1,3 +1,4 @@
+import { injectImportMap, hasImportMap } from './import-map.js';
 import type { Artifact } from '@extension/shared';
 
 const injectedArtifacts = new Map<string, { elements: HTMLElement[]; cleanup: () => void }>();
@@ -44,6 +45,12 @@ const injectReactArtifact = async (artifact: Artifact): Promise<{ success: boole
 
   try {
     await injectReactRuntime();
+
+    // If artifact has dependencies, inject import map (must happen before module scripts)
+    const hasDeps = artifact.dependencies && Object.keys(artifact.dependencies).length > 0;
+    if (hasDeps && !hasImportMap()) {
+      injectImportMap([artifact]);
+    }
 
     // Determine target elements: XPath expression or document.body
     const targets = artifact.elementXPath ? evaluateXPath(artifact.elementXPath) : [document.body];
@@ -143,10 +150,26 @@ const injectReactArtifact = async (artifact: Artifact): Promise<{ success: boole
     // Execute component code for each mount point
     for (let i = 0; i < hosts.length; i++) {
       const mountId = `conjure-mount-${artifact.id}-${i}`;
-      await chrome.runtime.sendMessage({
-        type: 'EXECUTE_IN_PAGE',
-        payload: { code: artifact.code, mountId, componentId: artifact.id, extensionId: artifact.extensionId },
-      });
+
+      if (hasDeps) {
+        // Module path: use import map + <script type="module">
+        await chrome.runtime.sendMessage({
+          type: 'EXECUTE_MODULE_IN_PAGE',
+          payload: {
+            code: artifact.code,
+            mountId,
+            componentId: artifact.id,
+            extensionId: artifact.extensionId,
+            dependencies: artifact.dependencies,
+          },
+        });
+      } else {
+        // Legacy path: use new Function() (no dependencies)
+        await chrome.runtime.sendMessage({
+          type: 'EXECUTE_IN_PAGE',
+          payload: { code: artifact.code, mountId, componentId: artifact.id, extensionId: artifact.extensionId },
+        });
+      }
     }
 
     const cleanup = () => {
@@ -210,4 +233,19 @@ const removeArtifact = (artifactId: string) => {
 
 const isArtifactInjected = (artifactId: string): boolean => injectedArtifacts.has(artifactId);
 
-export { injectArtifact, removeArtifact, isArtifactInjected };
+const injectArtifactsBatch = async (artifacts: Artifact[]): Promise<void> => {
+  // If any artifacts have dependencies, inject the import map FIRST (before any module scripts)
+  const withDeps = artifacts.filter(
+    a => a.type === 'react-component' && a.dependencies && Object.keys(a.dependencies).length > 0,
+  );
+  if (withDeps.length > 0 && !hasImportMap()) {
+    injectImportMap(artifacts);
+  }
+
+  // Then inject all artifacts in order
+  for (const artifact of artifacts) {
+    await injectArtifact(artifact);
+  }
+};
+
+export { injectArtifact, injectArtifactsBatch, removeArtifact, isArtifactInjected };

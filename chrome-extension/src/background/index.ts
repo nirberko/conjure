@@ -389,6 +389,164 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return { success: true };
       }
 
+      case 'EXECUTE_MODULE_IN_PAGE': {
+        const tabId = sender.tab?.id;
+        const {
+          code,
+          mountId,
+          componentId,
+          extensionId: extId,
+        } = message.payload as {
+          code: string;
+          mountId: string;
+          componentId: string;
+          extensionId?: string;
+          dependencies: Record<string, string>;
+        };
+        if (tabId) {
+          const tab = await chrome.tabs.get(tabId);
+          const pageUrl = tab.url || '';
+
+          let transformedCode = code;
+          try {
+            transformedCode = transform(code, { transforms: ['jsx'] }).code;
+          } catch {
+            // Code may already be plain JS
+          }
+
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            world: 'MAIN',
+            func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
+              // Context setup — expose on global for module to pick up
+              const ctxGlobal = ((window as unknown as Record<string, unknown>).__CONJURE_CTX__ ??= {}) as Record<
+                string,
+                unknown
+              >;
+
+              let _nextReqId = 0;
+              const extDbCall = (action: string, payload: Record<string, unknown>): Promise<unknown> =>
+                new Promise((resolve, reject) => {
+                  const reqId = 'db' + ++_nextReqId + '_' + Date.now();
+                  const handler = (e: Event) => {
+                    window.removeEventListener('conjure-ext-db-' + reqId, handler);
+                    const d = (e as CustomEvent).detail;
+                    if (d.error) reject(new Error(d.error));
+                    else resolve(d.result);
+                  };
+                  window.addEventListener('conjure-ext-db-' + reqId, handler);
+                  window.dispatchEvent(
+                    new CustomEvent('conjure-ext-db', {
+                      detail: { extensionId: eId, action, payload, requestId: reqId },
+                    }),
+                  );
+                });
+
+              const getData = (): Promise<Record<string, unknown>> =>
+                extDbCall('storageGet', { key: cId + ':' + pUrl }) as Promise<Record<string, unknown>>;
+              const setData = (data: Record<string, unknown>): Promise<void> =>
+                extDbCall('storageSet', { key: cId + ':' + pUrl, data }) as Promise<void>;
+              const sendMessage = (data: unknown): void => {
+                window.dispatchEvent(
+                  new CustomEvent('conjure-send-worker-message', { detail: { extensionId: eId, data } }),
+                );
+              };
+              const onWorkerMessage = (callback: (data: unknown) => void): (() => void) => {
+                const handler = (e: Event) => {
+                  const detail = (e as CustomEvent).detail;
+                  if (detail?.extensionId !== eId) return;
+                  callback(detail.data);
+                };
+                window.addEventListener('conjure-worker-message', handler);
+                return () => window.removeEventListener('conjure-worker-message', handler);
+              };
+              const db = {
+                createTables: (tables: Record<string, string>) => extDbCall('createTables', { tables }),
+                removeTables: (tableNames: string[]) => extDbCall('removeTables', { tableNames }),
+                getSchema: () => extDbCall('getSchema', {}),
+                put: (table: string, data: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'put', table, data } }),
+                add: (table: string, data: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'add', table, data } }),
+                get: (table: string, key: string | number) =>
+                  extDbCall('query', { operation: { type: 'get', table, key } }),
+                getAll: (table: string) => extDbCall('query', { operation: { type: 'getAll', table } }),
+                update: (table: string, key: string | number, changes: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'update', table, key, changes } }),
+                delete: (table: string, key: string | number) =>
+                  extDbCall('query', { operation: { type: 'delete', table, key } }),
+                where: (table: string, index: string, value: unknown, limit?: number) =>
+                  extDbCall('query', { operation: { type: 'where', table, index, value, limit } }),
+                bulkPut: (table: string, data: Record<string, unknown>[]) =>
+                  extDbCall('query', { operation: { type: 'bulkPut', table, data } }),
+                bulkDelete: (table: string, keys: (string | number)[]) =>
+                  extDbCall('query', { operation: { type: 'bulkDelete', table, keys } }),
+                count: (table: string) => extDbCall('query', { operation: { type: 'count', table } }),
+                clear: (table: string) => extDbCall('query', { operation: { type: 'clear', table } }),
+              };
+              const env = {
+                async get(key: string): Promise<string | null> {
+                  const envData = ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
+                  return envData[key] ?? null;
+                },
+                async getAll(): Promise<Record<string, string>> {
+                  return ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
+                },
+              };
+
+              const ctxKey = cId + '_' + mId;
+              ctxGlobal[ctxKey] = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db, env };
+
+              // Extract component name from return statement
+              const nameMatch =
+                componentCode.match(/return\s+([A-Z]\w*)\s*;?\s*$/) ||
+                componentCode.match(/function\s+([A-Z]\w*)\s*\(/);
+              const componentName = nameMatch ? nameMatch[1] : '_Component';
+
+              // Build module code
+              const moduleCode = [
+                "import React from 'react';",
+                "import ReactDOM from 'react-dom/client';",
+                '',
+                `const context = window.__CONJURE_CTX__['${ctxKey}'];`,
+                '',
+                'const _getComponent = (function(React, ReactDOM, context) {',
+                componentCode,
+                '})(React, ReactDOM, context);',
+                '',
+                `const _Component = _getComponent || ${componentName};`,
+                `const mountEl = document.getElementById('${mId}');`,
+                'if (mountEl && _Component) {',
+                '  const root = ReactDOM.createRoot(mountEl);',
+                '  root.render(React.createElement(_Component, { context }));',
+                '} else if (mountEl) {',
+                '  mountEl.innerHTML = \'<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component did not return a valid component.</div>\';',
+                '}',
+              ].join('\n');
+
+              // Execute as module via Blob URL
+              const blob = new Blob([moduleCode], { type: 'text/javascript' });
+              const blobUrl = URL.createObjectURL(blob);
+              const script = document.createElement('script');
+              script.type = 'module';
+              script.src = blobUrl;
+              script.onerror = () => {
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Module failed to load. Check console for errors.</div>';
+                }
+                URL.revokeObjectURL(blobUrl);
+              };
+              script.onload = () => URL.revokeObjectURL(blobUrl);
+              document.head.appendChild(script);
+            },
+            args: [transformedCode, mountId, componentId, pageUrl, extId ?? ''],
+          });
+        }
+        return { success: true };
+      }
+
       // --- Extension CRUD messages ---
 
       case 'GET_ALL_EXTENSIONS': {
