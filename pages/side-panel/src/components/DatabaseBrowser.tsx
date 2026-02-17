@@ -6,9 +6,10 @@ import { useState, useCallback } from 'react';
 
 interface DatabaseBrowserProps {
   extensionId: string;
+  isActive?: boolean;
 }
 
-export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
+export const DatabaseBrowser = ({ extensionId, isActive }: DatabaseBrowserProps) => {
   const {
     tables,
     selectedTable,
@@ -23,7 +24,7 @@ export const DatabaseBrowser = ({ extensionId }: DatabaseBrowserProps) => {
     putRow,
     deleteRow,
     refresh,
-  } = useDatabaseBrowser(extensionId);
+  } = useDatabaseBrowser(extensionId, isActive);
 
   const [editorRow, setEditorRow] = useState<Record<string, unknown> | null | undefined>(undefined);
   // undefined = closed, null = insert mode, object = edit mode

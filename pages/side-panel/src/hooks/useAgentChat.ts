@@ -5,7 +5,7 @@ import {
   clearAgentConversation,
   REQUEST_USER_INPUT_TOOL_NAME,
 } from '@extension/shared';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useReducer, useCallback, useEffect, useRef } from 'react';
 import type {
   Artifact,
   AgentChatMessage,
@@ -15,43 +15,480 @@ import type {
   UserInputRequest,
 } from '@extension/shared';
 
-export type { ToolCallDisplay, ThinkingData, MessageDisplayItem } from '@extension/shared';
-export type AgentMessage = AgentChatMessage;
-
-export interface ActiveThinking {
+interface ActiveThinking {
   startTime: number;
 }
 
-export const useAgentChat = (extensionId: string) => {
-  const [messages, setMessages] = useState<AgentMessage[]>([]);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-  const [activeThinking, setActiveThinking] = useState<ActiveThinking | null>(null);
-  const [pendingInputRequest, setPendingInputRequest] = useState<UserInputRequest | null>(null);
-  const pendingToolCalls = useRef<ToolCallDisplay[]>([]);
-  const pendingDisplayItems = useRef<MessageDisplayItem[]>([]);
-  const pendingThinking = useRef<ThinkingData | null>(null);
-  const messageIdCounter = useRef(0);
+// ---------------------------------------------------------------------------
+// State & Actions
+// ---------------------------------------------------------------------------
 
-  // Load conversation history from DB on mount
+interface Turn {
+  toolCalls: ToolCallDisplay[];
+  displayItems: MessageDisplayItem[];
+  thinking: ThinkingData | null;
+}
+
+// ---------------------------------------------------------------------------
+// Persistence operations (side-effects collected by reducer)
+// ---------------------------------------------------------------------------
+
+type PersistenceOp =
+  | { op: 'add'; message: AgentChatMessage }
+  | { op: 'update'; message: AgentChatMessage }
+  | { op: 'clear' };
+
+interface ChatState {
+  messages: AgentChatMessage[];
+  isRunning: boolean;
+  isLoading: boolean;
+  artifacts: Artifact[];
+  activeThinking: ActiveThinking | null;
+  pendingInputRequest: UserInputRequest | null;
+  turn: Turn;
+  nextMsgId: number;
+  _pendingOps: PersistenceOp[];
+}
+
+const emptyTurn = (): Turn => ({ toolCalls: [], displayItems: [], thinking: null });
+
+const initialState: ChatState = {
+  messages: [],
+  isRunning: false,
+  isLoading: true,
+  artifacts: [],
+  activeThinking: null,
+  pendingInputRequest: null,
+  turn: emptyTurn(),
+  nextMsgId: 0,
+  _pendingOps: [],
+};
+
+type ChatAction =
+  | { type: 'LOADED'; messages: AgentChatMessage[]; maxId: number }
+  | { type: 'AGENT_STATUS'; isRunning: boolean }
+  | { type: 'SEND_MESSAGE'; content: string; timestamp: number }
+  | { type: 'STREAM_THINKING_START' }
+  | { type: 'STREAM_THINKING_DONE'; content: string; durationMs: number; timestamp: number }
+  | { type: 'STREAM_TOOL_CALL'; toolName: string; toolArgs: Record<string, unknown>; timestamp: number }
+  | { type: 'STREAM_TOOL_RESULT'; toolName: string; toolResult: string }
+  | { type: 'STREAM_RESPONSE'; content: string; timestamp: number }
+  | { type: 'STREAM_ERROR'; error: string; timestamp: number }
+  | { type: 'STREAM_DONE'; artifacts?: Artifact[] }
+  | { type: 'STOP' }
+  | { type: 'CLEAR' }
+  | { type: 'DISMISS_INPUT_REQUEST' }
+  | { type: 'DRAIN_OPS' };
+
+// ---------------------------------------------------------------------------
+// Reducer helpers
+// ---------------------------------------------------------------------------
+
+type ReducerResult = [ChatState, PersistenceOp[]];
+
+/** Returns the last assistant message for update, or creates a new one. */
+const ensureAssistantMessage = (
+  state: ChatState,
+  timestamp: number,
+): { messages: AgentChatMessage[]; assistant: AgentChatMessage; isNew: boolean } => {
+  const last = state.messages[state.messages.length - 1];
+  if (last?.role === 'assistant') {
+    return { messages: state.messages, assistant: last, isNew: false };
+  }
+  const newMsg: AgentChatMessage = {
+    id: `msg-${state.nextMsgId + 1}`,
+    role: 'assistant',
+    content: '',
+    timestamp,
+  };
+  return { messages: [...state.messages, newMsg], assistant: newMsg, isNew: true };
+};
+
+const replaceLastMessage = (messages: AgentChatMessage[], updated: AgentChatMessage): AgentChatMessage[] => [
+  ...messages.slice(0, -1),
+  updated,
+];
+
+// ---------------------------------------------------------------------------
+// Core reducer (pure — returns [state, ops])
+// ---------------------------------------------------------------------------
+
+const chatReducerWithEffects = (state: ChatState, action: ChatAction): ReducerResult => {
+  switch (action.type) {
+    case 'LOADED': {
+      return [
+        {
+          ...state,
+          messages: action.messages,
+          nextMsgId: action.maxId,
+          isLoading: false,
+        },
+        [],
+      ];
+    }
+
+    case 'AGENT_STATUS': {
+      return [
+        {
+          ...state,
+          isRunning: action.isRunning,
+          activeThinking: action.isRunning ? { startTime: Date.now() } : null,
+        },
+        [],
+      ];
+    }
+
+    case 'SEND_MESSAGE': {
+      const userMsg: AgentChatMessage = {
+        id: `msg-${state.nextMsgId + 1}`,
+        role: 'user',
+        content: action.content,
+        timestamp: action.timestamp,
+      };
+      return [
+        {
+          ...state,
+          messages: [...state.messages, userMsg],
+          isRunning: true,
+          turn: emptyTurn(),
+          nextMsgId: state.nextMsgId + 1,
+        },
+        [{ op: 'add', message: userMsg }],
+      ];
+    }
+
+    case 'STREAM_THINKING_START': {
+      return [{ ...state, activeThinking: { startTime: Date.now() } }, []];
+    }
+
+    case 'STREAM_THINKING_DONE': {
+      const thinkingData: ThinkingData = {
+        content: action.content,
+        durationMs: action.durationMs,
+      };
+      const newTurn: Turn = {
+        ...state.turn,
+        thinking: thinkingData,
+        displayItems: [...state.turn.displayItems, { kind: 'thinking', data: thinkingData }],
+      };
+
+      const { messages, assistant, isNew } = ensureAssistantMessage(state, action.timestamp);
+      const nextId = isNew ? state.nextMsgId + 1 : state.nextMsgId;
+
+      const updated: AgentChatMessage = {
+        ...assistant,
+        thinking: assistant.thinking ?? thinkingData,
+        displayItems: [...newTurn.displayItems],
+      };
+
+      return [
+        {
+          ...state,
+          messages: isNew ? replaceLastMessage(messages, updated) : replaceLastMessage(state.messages, updated),
+          activeThinking: null,
+          turn: newTurn,
+          nextMsgId: nextId,
+        },
+        [isNew ? { op: 'add', message: updated } : { op: 'update', message: updated }],
+      ];
+    }
+
+    case 'STREAM_TOOL_CALL': {
+      const tc: ToolCallDisplay = {
+        name: action.toolName,
+        args: action.toolArgs,
+        status: 'pending',
+      };
+      const newTurn: Turn = {
+        ...state.turn,
+        toolCalls: [...state.turn.toolCalls, tc],
+        displayItems: [...state.turn.displayItems, { kind: 'tool_call', data: tc }],
+      };
+
+      // Handle user input request
+      let pendingInputRequest = state.pendingInputRequest;
+      if (action.toolName === REQUEST_USER_INPUT_TOOL_NAME && action.toolArgs) {
+        pendingInputRequest = action.toolArgs as unknown as UserInputRequest;
+      }
+
+      const { messages, assistant, isNew } = ensureAssistantMessage(state, action.timestamp);
+      const nextId = isNew ? state.nextMsgId + 1 : state.nextMsgId;
+
+      const thinking = isNew ? (state.turn.thinking ?? undefined) : assistant.thinking;
+      const updated: AgentChatMessage = {
+        ...assistant,
+        thinking,
+        toolCalls: [...newTurn.toolCalls],
+        displayItems: [...newTurn.displayItems],
+      };
+
+      return [
+        {
+          ...state,
+          messages: isNew ? replaceLastMessage(messages, updated) : replaceLastMessage(state.messages, updated),
+          turn: newTurn,
+          nextMsgId: nextId,
+          pendingInputRequest,
+        },
+        [isNew ? { op: 'add', message: updated } : { op: 'update', message: updated }],
+      ];
+    }
+
+    case 'STREAM_TOOL_RESULT': {
+      // Mark only the FIRST pending tool call with matching name as done
+      let foundTc = false;
+      const updatedToolCalls = state.turn.toolCalls.map(tc => {
+        if (!foundTc && tc.name === action.toolName && tc.status === 'pending') {
+          foundTc = true;
+          return { ...tc, status: 'done' as const, result: action.toolResult };
+        }
+        return tc;
+      });
+      // Also update the first matching in displayItems
+      let foundDi = false;
+      const updatedDisplayItems = state.turn.displayItems.map(item => {
+        if (
+          !foundDi &&
+          item.kind === 'tool_call' &&
+          item.data.name === action.toolName &&
+          item.data.status === 'pending'
+        ) {
+          foundDi = true;
+          return { ...item, data: { ...item.data, status: 'done' as const, result: action.toolResult } };
+        }
+        return item;
+      });
+      const newTurn: Turn = { ...state.turn, toolCalls: updatedToolCalls, displayItems: updatedDisplayItems };
+
+      let pendingInputRequest = state.pendingInputRequest;
+      if (action.toolName === REQUEST_USER_INPUT_TOOL_NAME) {
+        pendingInputRequest = null;
+      }
+
+      const last = state.messages[state.messages.length - 1];
+      if (last?.role === 'assistant') {
+        const updated: AgentChatMessage = {
+          ...last,
+          toolCalls: [...updatedToolCalls],
+          displayItems: [...updatedDisplayItems],
+        };
+        return [
+          {
+            ...state,
+            messages: replaceLastMessage(state.messages, updated),
+            turn: newTurn,
+            pendingInputRequest,
+          },
+          [{ op: 'update', message: updated }],
+        ];
+      }
+      return [{ ...state, turn: newTurn, pendingInputRequest }, []];
+    }
+
+    case 'STREAM_RESPONSE': {
+      const newTurn = emptyTurn();
+
+      const last = state.messages[state.messages.length - 1];
+      // Merge into existing assistant message if it has no content yet (created by thinking_done)
+      if (last?.role === 'assistant' && !last.content && (!last.toolCalls || last.toolCalls.length === 0)) {
+        const displayItems = state.turn.displayItems.length > 0 ? [...state.turn.displayItems] : last.displayItems;
+        const merged: AgentChatMessage = {
+          ...last,
+          content: action.content,
+          thinking: last.thinking ?? state.turn.thinking ?? undefined,
+          displayItems,
+        };
+        return [
+          { ...state, messages: replaceLastMessage(state.messages, merged), turn: newTurn },
+          [{ op: 'update', message: merged }],
+        ];
+      }
+
+      // Create new response message (normal case: after tool calls).
+      // Don't copy turn displayItems/thinking — they're already in the previous assistant message.
+      const responseMsg: AgentChatMessage = {
+        id: `msg-${state.nextMsgId + 1}`,
+        role: 'assistant',
+        content: action.content,
+        timestamp: action.timestamp,
+      };
+      return [
+        {
+          ...state,
+          messages: [...state.messages, responseMsg],
+          turn: newTurn,
+          nextMsgId: state.nextMsgId + 1,
+        },
+        [{ op: 'add', message: responseMsg }],
+      ];
+    }
+
+    case 'STREAM_ERROR': {
+      const errorMsg: AgentChatMessage = {
+        id: `msg-${state.nextMsgId + 1}`,
+        role: 'assistant',
+        content: `Error: ${action.error}`,
+        timestamp: action.timestamp,
+      };
+      return [
+        {
+          ...state,
+          messages: [...state.messages, errorMsg],
+          isRunning: false,
+          activeThinking: null,
+          pendingInputRequest: null,
+          turn: emptyTurn(),
+          nextMsgId: state.nextMsgId + 1,
+        },
+        [{ op: 'add', message: errorMsg }],
+      ];
+    }
+
+    case 'STREAM_DONE': {
+      // Resolve any still-pending tool calls to 'skipped'
+      const hasPending = state.turn.toolCalls.some(tc => tc.status === 'pending');
+      let ops: PersistenceOp[] = [];
+
+      let messages = state.messages;
+      if (hasPending) {
+        const resolvedToolCalls = state.turn.toolCalls.map(tc =>
+          tc.status === 'pending' ? { ...tc, status: 'skipped' as const } : tc,
+        );
+        const resolvedDisplayItems = state.turn.displayItems.map(item =>
+          item.kind === 'tool_call' && item.data.status === 'pending'
+            ? { ...item, data: { ...item.data, status: 'skipped' as const } }
+            : item,
+        );
+        const last = messages[messages.length - 1];
+        if (last?.role === 'assistant') {
+          const updated: AgentChatMessage = {
+            ...last,
+            toolCalls: resolvedToolCalls,
+            displayItems: resolvedDisplayItems,
+          };
+          messages = replaceLastMessage(messages, updated);
+          ops = [{ op: 'update', message: updated }];
+        }
+      }
+
+      return [
+        {
+          ...state,
+          messages,
+          isRunning: false,
+          activeThinking: null,
+          pendingInputRequest: null,
+          turn: emptyTurn(),
+          artifacts: action.artifacts ?? state.artifacts,
+        },
+        ops,
+      ];
+    }
+
+    case 'STOP': {
+      return [
+        {
+          ...state,
+          isRunning: false,
+          activeThinking: null,
+          turn: emptyTurn(),
+        },
+        [],
+      ];
+    }
+
+    case 'DISMISS_INPUT_REQUEST': {
+      return [{ ...state, pendingInputRequest: null }, []];
+    }
+
+    case 'CLEAR': {
+      return [
+        {
+          ...initialState,
+          isLoading: false,
+        },
+        [{ op: 'clear' }],
+      ];
+    }
+
+    case 'DRAIN_OPS': {
+      return [{ ...state, _pendingOps: [] }, []];
+    }
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
+
+const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
+  const [newState, ops] = chatReducerWithEffects(state, action);
+  // LOADED replaces all state for a (possibly new) extension — discard stale ops
+  if (action.type === 'LOADED') {
+    return { ...newState, _pendingOps: [] };
+  }
+  return { ...newState, _pendingOps: [...newState._pendingOps, ...ops] };
+};
+
+export const useAgentChat = (extensionId: string) => {
+  const [state, dispatch] = useReducer(chatReducer, initialState);
+
+  // Track the extensionId that pending ops belong to, updated only in effects.
+  const opsExtensionIdRef = useRef(extensionId);
+
+  // --- Drain persistence effects after each render ---
   useEffect(() => {
-    // Check if agent is still running in background
+    if (state._pendingOps.length === 0) {
+      opsExtensionIdRef.current = extensionId;
+      return;
+    }
+    const ops = state._pendingOps;
+    dispatch({ type: 'DRAIN_OPS' });
+
+    // If extensionId changed since ops were queued, discard them
+    if (opsExtensionIdRef.current !== extensionId) {
+      opsExtensionIdRef.current = extensionId;
+      return;
+    }
+
+    for (const op of ops) {
+      switch (op.op) {
+        case 'add':
+          addAgentMessage(extensionId, op.message).catch(err => console.error('[Conjure] Failed to persist add:', err));
+          break;
+        case 'update':
+          updateLastAgentMessage(extensionId, op.message).catch(err =>
+            console.error('[Conjure] Failed to persist update:', err),
+          );
+          break;
+        case 'clear':
+          clearAgentConversation(extensionId).catch(err =>
+            console.error('[Conjure] Failed to clear conversation:', err),
+          );
+          break;
+      }
+    }
+  }, [state._pendingOps, extensionId]);
+
+  // --- Load conversation from DB + check agent status ---
+  useEffect(() => {
+    let cancelled = false;
+
     chrome.runtime
       .sendMessage({ type: 'GET_AGENT_STATUS', payload: { extensionId } })
       .then((response: { isRunning?: boolean }) => {
-        if (response?.isRunning) {
-          setIsRunning(true);
-          setActiveThinking({ startTime: Date.now() });
+        if (!cancelled) {
+          dispatch({ type: 'AGENT_STATUS', isRunning: !!response?.isRunning });
         }
       })
       .catch(err => console.error('[Conjure] Failed to query agent status:', err));
 
     getAgentConversation(extensionId)
       .then(conversation => {
+        if (cancelled) return;
         if (conversation && conversation.messages.length > 0) {
           // Resolve any pending tool calls to 'done' (they were in-flight when session ended)
-          const restored: AgentMessage[] = conversation.messages.map(m => {
+          const restored: AgentChatMessage[] = conversation.messages.map(m => {
             const toolCalls = m.toolCalls?.map(tc => ({
               ...tc,
               status: tc.status === 'pending' ? ('done' as const) : tc.status,
@@ -69,19 +506,28 @@ export const useAgentChat = (extensionId: string) => {
             }
             return { ...m, toolCalls, displayItems };
           });
-          setMessages(restored);
-          // Restore message ID counter to avoid collisions
           const maxId = conversation.messages.reduce((max, m) => {
             const num = parseInt(m.id.replace('msg-', ''), 10);
             return isNaN(num) ? max : Math.max(max, num);
           }, 0);
-          messageIdCounter.current = maxId;
+          dispatch({ type: 'LOADED', messages: restored, maxId });
+        } else {
+          dispatch({ type: 'LOADED', messages: [], maxId: 0 });
         }
       })
-      .catch(err => console.error('[Conjure] Failed to load chat history:', err))
-      .finally(() => setIsLoading(false));
+      .catch(err => {
+        console.error('[Conjure] Failed to load chat history:', err);
+        if (!cancelled) {
+          dispatch({ type: 'LOADED', messages: [], maxId: 0 });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [extensionId]);
 
+  // --- Listen for stream events from background ---
   useEffect(() => {
     const listener = (message: { type: string; payload?: unknown }) => {
       if (message.type !== 'AGENT_STREAM_EVENT') return;
@@ -104,239 +550,67 @@ export const useAgentChat = (extensionId: string) => {
       switch (event.type) {
         case 'thinking':
           if (event.data.thinkingStatus === 'start') {
-            setActiveThinking({ startTime: Date.now() });
-          } else if (event.data.thinkingStatus === 'done') {
-            setActiveThinking(null);
-            if (event.data.content) {
-              const thinkingData: ThinkingData = {
-                content: event.data.content,
-                durationMs: event.data.durationMs ?? 0,
-              };
-              pendingThinking.current = thinkingData;
-              pendingDisplayItems.current.push({ kind: 'thinking', data: thinkingData });
-
-              // Immediately show the thinking block in the message bubble
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  // Append to existing assistant message (iteration 2+)
-                  const updated = [...prev.slice(0, -1), { ...last, displayItems: [...pendingDisplayItems.current] }];
-                  updateLastAgentMessage(extensionId, updated[updated.length - 1]).catch(err =>
-                    console.error('[Conjure] Failed to persist thinking:', err),
-                  );
-                  return updated;
-                }
-                // Create new assistant message for iteration 1
-                const thinking = pendingThinking.current ?? undefined;
-                pendingThinking.current = null;
-                const newMsg: AgentMessage = {
-                  id: `msg-${++messageIdCounter.current}`,
-                  role: 'assistant' as const,
-                  content: '',
-                  timestamp: event.timestamp,
-                  thinking,
-                  displayItems: [...pendingDisplayItems.current],
-                };
-                addAgentMessage(extensionId, newMsg).catch(err =>
-                  console.error('[Conjure] Failed to persist thinking message:', err),
-                );
-                return [...prev, newMsg];
-              });
-            }
-          }
-          break;
-
-        case 'tool_call': {
-          // If this is a request_user_input call, show the form
-          if (event.data.toolName === REQUEST_USER_INPUT_TOOL_NAME && event.data.toolArgs) {
-            setPendingInputRequest(event.data.toolArgs as unknown as UserInputRequest);
-          }
-          const tc: ToolCallDisplay = {
-            name: event.data.toolName ?? 'unknown',
-            args: event.data.toolArgs ?? {},
-            status: 'pending',
-          };
-          pendingToolCalls.current.push(tc);
-          pendingDisplayItems.current.push({ kind: 'tool_call', data: tc });
-          // Update the last assistant message with tool calls
-          setMessages(prev => {
-            const last = prev[prev.length - 1];
-            let updated: AgentMessage[];
-            if (last?.role === 'assistant') {
-              updated = [
-                ...prev.slice(0, -1),
-                {
-                  ...last,
-                  toolCalls: [...pendingToolCalls.current],
-                  displayItems: [...pendingDisplayItems.current],
-                },
-              ];
-            } else {
-              // New assistant message — attach pending thinking if available
-              const thinking = pendingThinking.current ?? undefined;
-              pendingThinking.current = null;
-              updated = [
-                ...prev,
-                {
-                  id: `msg-${++messageIdCounter.current}`,
-                  role: 'assistant' as const,
-                  content: '',
-                  timestamp: event.timestamp,
-                  toolCalls: [...pendingToolCalls.current],
-                  displayItems: [...pendingDisplayItems.current],
-                  thinking,
-                },
-              ];
-            }
-            // Persist the assistant message with tool calls
-            const lastMsg = updated[updated.length - 1];
-            if (lastMsg?.role === 'assistant') {
-              if (last?.role === 'assistant') {
-                updateLastAgentMessage(extensionId, lastMsg).catch(err =>
-                  console.error('[Conjure] Failed to persist tool_call:', err),
-                );
-              } else {
-                addAgentMessage(extensionId, lastMsg).catch(err =>
-                  console.error('[Conjure] Failed to persist new assistant message:', err),
-                );
-              }
-            }
-            return updated;
-          });
-          break;
-        }
-
-        case 'tool_result': {
-          if (event.data.toolName === REQUEST_USER_INPUT_TOOL_NAME) {
-            setPendingInputRequest(null);
-          }
-          const tcRef = pendingToolCalls.current.find(t => t.name === event.data.toolName && t.status === 'pending');
-          if (tcRef) {
-            // Mutate in place — same object is in both pendingToolCalls and pendingDisplayItems
-            tcRef.status = 'done';
-            tcRef.result =
-              typeof event.data.toolResult === 'string' ? event.data.toolResult : JSON.stringify(event.data.toolResult);
-          }
-          setMessages(prev => {
-            const last = prev[prev.length - 1];
-            if (last?.role === 'assistant') {
-              const updated = [
-                ...prev.slice(0, -1),
-                {
-                  ...last,
-                  toolCalls: [...pendingToolCalls.current],
-                  displayItems: [...pendingDisplayItems.current],
-                },
-              ];
-              // Persist the updated tool result
-              const lastMsg = updated[updated.length - 1];
-              updateLastAgentMessage(extensionId, lastMsg).catch(err =>
-                console.error('[Conjure] Failed to persist tool_result:', err),
-              );
-              return updated;
-            }
-            return prev;
-          });
-          break;
-        }
-
-        case 'response': {
-          pendingToolCalls.current = [];
-          const thinking = pendingThinking.current ?? undefined;
-          pendingThinking.current = null;
-          const responseDisplayItems =
-            pendingDisplayItems.current.length > 0 ? [...pendingDisplayItems.current] : undefined;
-          pendingDisplayItems.current = [];
-
-          setMessages(prev => {
-            const last = prev[prev.length - 1];
-            // If last message is an empty assistant message (created by thinking:done, no tool calls),
-            // merge the response content into it instead of creating a duplicate
-            if (last?.role === 'assistant' && !last.content && (!last.toolCalls || last.toolCalls.length === 0)) {
-              const merged: AgentMessage = {
-                ...last,
-                content: event.data.content ?? '',
-                thinking: last.thinking ?? thinking,
-                displayItems: responseDisplayItems ?? last.displayItems,
-              };
-              const updated = [...prev.slice(0, -1), merged];
-              updateLastAgentMessage(extensionId, merged).catch(err =>
-                console.error('[Conjure] Failed to persist response:', err),
-              );
-              return updated;
-            }
-            // Create new response message (normal case: after tool calls)
-            const responseMsg: AgentMessage = {
-              id: `msg-${++messageIdCounter.current}`,
-              role: 'assistant',
-              content: event.data.content ?? '',
+            dispatch({ type: 'STREAM_THINKING_START' });
+          } else if (event.data.thinkingStatus === 'done' && event.data.content) {
+            dispatch({
+              type: 'STREAM_THINKING_DONE',
+              content: event.data.content,
+              durationMs: event.data.durationMs ?? 0,
               timestamp: event.timestamp,
-              thinking,
-              displayItems: responseDisplayItems,
-            };
-            addAgentMessage(extensionId, responseMsg).catch(err =>
-              console.error('[Conjure] Failed to persist response:', err),
-            );
-            return [...prev, responseMsg];
-          });
-          break;
-        }
-
-        case 'error': {
-          pendingToolCalls.current = [];
-          pendingDisplayItems.current = [];
-          pendingThinking.current = null;
-          setActiveThinking(null);
-          setPendingInputRequest(null);
-          const errorMsg: AgentMessage = {
-            id: `msg-${++messageIdCounter.current}`,
-            role: 'assistant',
-            content: `Error: ${event.data.error}`,
-            timestamp: event.timestamp,
-          };
-          setMessages(prev => [...prev, errorMsg]);
-          setIsRunning(false);
-          // Persist the error message
-          addAgentMessage(extensionId, errorMsg).catch(err => console.error('[Conjure] Failed to persist error:', err));
-          break;
-        }
-
-        case 'done':
-          setPendingInputRequest(null);
-          // Resolve any still-pending tool calls to 'skipped' so they don't show as perpetually loading
-          if (pendingToolCalls.current.some(tc => tc.status === 'pending')) {
-            for (const tc of pendingToolCalls.current) {
-              if (tc.status === 'pending') {
-                tc.status = 'skipped';
-              }
-            }
-            setMessages(prev => {
-              const last = prev[prev.length - 1];
-              if (last?.role === 'assistant') {
-                const updated = [
-                  ...prev.slice(0, -1),
-                  {
-                    ...last,
-                    toolCalls: [...pendingToolCalls.current],
-                    displayItems: [...pendingDisplayItems.current],
-                  },
-                ];
-                updateLastAgentMessage(extensionId, updated[updated.length - 1]).catch(err =>
-                  console.error('[Conjure] Failed to persist skipped tool calls:', err),
-                );
-                return updated;
-              }
-              return prev;
             });
           }
-          pendingToolCalls.current = [];
-          pendingDisplayItems.current = [];
-          pendingThinking.current = null;
-          setActiveThinking(null);
-          if (event.data.artifacts) {
-            setArtifacts(event.data.artifacts);
+          break;
+
+        case 'tool_call':
+          dispatch({
+            type: 'STREAM_TOOL_CALL',
+            toolName: event.data.toolName ?? 'unknown',
+            toolArgs: event.data.toolArgs ?? {},
+            timestamp: event.timestamp,
+          });
+          break;
+
+        case 'tool_result':
+          {
+            let toolResult: string;
+            if (typeof event.data.toolResult === 'string') {
+              toolResult = event.data.toolResult;
+            } else {
+              try {
+                toolResult = JSON.stringify(event.data.toolResult);
+              } catch {
+                toolResult = String(event.data.toolResult);
+              }
+            }
+            dispatch({
+              type: 'STREAM_TOOL_RESULT',
+              toolName: event.data.toolName ?? 'unknown',
+              toolResult,
+            });
           }
-          setIsRunning(false);
+          break;
+
+        case 'response':
+          dispatch({
+            type: 'STREAM_RESPONSE',
+            content: event.data.content ?? '',
+            timestamp: event.timestamp,
+          });
+          break;
+
+        case 'error':
+          dispatch({
+            type: 'STREAM_ERROR',
+            error: event.data.error ?? 'Unknown error',
+            timestamp: event.timestamp,
+          });
+          break;
+
+        case 'done':
+          dispatch({
+            type: 'STREAM_DONE',
+            artifacts: event.data.artifacts,
+          });
           break;
       }
     };
@@ -345,25 +619,12 @@ export const useAgentChat = (extensionId: string) => {
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, [extensionId]);
 
+  // --- Actions ---
+
   const sendMessage = useCallback(
     (content: string) => {
-      if (!content.trim() || isRunning) return;
-
-      const userMsg: AgentMessage = {
-        id: `msg-${++messageIdCounter.current}`,
-        role: 'user',
-        content,
-        timestamp: Date.now(),
-      };
-      setMessages(prev => [...prev, userMsg]);
-      setIsRunning(true);
-      pendingToolCalls.current = [];
-      pendingDisplayItems.current = [];
-
-      // Persist user message
-      addAgentMessage(extensionId, userMsg).catch(err =>
-        console.error('[Conjure] Failed to persist user message:', err),
-      );
+      if (!content.trim() || state.isRunning) return;
+      dispatch({ type: 'SEND_MESSAGE', content, timestamp: Date.now() });
 
       chrome.runtime
         .sendMessage({
@@ -372,7 +633,7 @@ export const useAgentChat = (extensionId: string) => {
         })
         .catch(err => console.error('[Conjure] Failed to send AGENT_RUN:', err));
     },
-    [extensionId, isRunning],
+    [extensionId, state.isRunning],
   );
 
   const stopAgent = useCallback(() => {
@@ -380,42 +641,34 @@ export const useAgentChat = (extensionId: string) => {
       type: 'AGENT_STOP',
       payload: { extensionId },
     });
-    setIsRunning(false);
-    setActiveThinking(null);
-    pendingThinking.current = null;
-    pendingToolCalls.current = [];
-    pendingDisplayItems.current = [];
+    dispatch({ type: 'STOP' });
   }, [extensionId]);
+
+  const clearChat = useCallback(() => {
+    dispatch({ type: 'CLEAR' });
+  }, []);
 
   const submitUserInput = useCallback((values: Record<string, string | number>) => {
     chrome.runtime
       .sendMessage({ type: 'USER_INPUT_RESULT', payload: values })
       .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT:', err));
-    setPendingInputRequest(null);
+    dispatch({ type: 'DISMISS_INPUT_REQUEST' });
   }, []);
 
   const cancelUserInput = useCallback(() => {
     chrome.runtime
       .sendMessage({ type: 'USER_INPUT_RESULT', payload: null })
       .catch(err => console.error('[Conjure] Failed to send USER_INPUT_RESULT cancel:', err));
-    setPendingInputRequest(null);
+    dispatch({ type: 'DISMISS_INPUT_REQUEST' });
   }, []);
 
-  const clearChat = useCallback(() => {
-    setMessages([]);
-    pendingToolCalls.current = [];
-    pendingDisplayItems.current = [];
-    setIsRunning(false);
-    clearAgentConversation(extensionId).catch(err => console.error('[Conjure] Failed to clear conversation:', err));
-  }, [extensionId]);
-
   return {
-    messages,
-    isRunning,
-    isLoading,
-    artifacts,
-    activeThinking,
-    pendingInputRequest,
+    messages: state.messages,
+    isRunning: state.isRunning,
+    isLoading: state.isLoading,
+    artifacts: state.artifacts,
+    activeThinking: state.activeThinking,
+    pendingInputRequest: state.pendingInputRequest,
     sendMessage,
     stopAgent,
     clearChat,
@@ -423,3 +676,7 @@ export const useAgentChat = (extensionId: string) => {
     cancelUserInput,
   };
 };
+
+export type { ToolCallDisplay, ThinkingData, MessageDisplayItem } from '@extension/shared';
+export type AgentMessage = AgentChatMessage;
+export type { ActiveThinking };
