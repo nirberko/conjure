@@ -25,6 +25,7 @@ import {
   getArtifactsByExtension,
   extensionDBManager,
   db,
+  REACT_VERSION,
 } from '@extension/shared';
 import { transform } from 'sucrase';
 import type { Extension, AIProvider, ExtDBOperation } from '@extension/shared';
@@ -146,12 +147,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           await chrome.scripting.executeScript({
             target: { tabId },
             world: 'MAIN',
-            func: (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
-              const _WF = (window as unknown as Record<string, unknown>).__CONJURE__ as
-                | Record<string, unknown>
-                | undefined;
+            func: async (componentCode: string, mId: string, cId: string, pUrl: string, eId: string) => {
+              // Wait for React runtime to be available (executeScript may resolve before the IIFE runs)
+              let _WF: Record<string, unknown> | undefined;
+              for (let i = 0; i < 50; i++) {
+                _WF = (window as unknown as Record<string, unknown>).__CONJURE__ as Record<string, unknown> | undefined;
+                if (_WF) break;
+                await new Promise(r => setTimeout(r, 50));
+              }
               if (!_WF) {
                 console.error('[Conjure] React runtime not loaded');
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: React runtime failed to load. Try reloading the page.</div>';
+                }
                 return;
               }
 
@@ -384,6 +394,262 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
             },
             args: [transformedCode, mountId, componentId, pageUrl, extId ?? ''],
+          });
+        }
+        return { success: true };
+      }
+
+      case 'EXECUTE_MODULE_IN_PAGE': {
+        const tabId = sender.tab?.id;
+        const {
+          code,
+          mountId,
+          componentId,
+          extensionId: extId,
+          dependencies,
+        } = message.payload as {
+          code: string;
+          mountId: string;
+          componentId: string;
+          extensionId?: string;
+          dependencies: Record<string, string>;
+        };
+        if (tabId) {
+          const tab = await chrome.tabs.get(tabId);
+          const pageUrl = tab.url || '';
+
+          // Build dependency URL map — use ?deps to rewrite bare 'react' specifiers to full URLs
+          const reactUrl = `https://esm.sh/react@${REACT_VERSION}`;
+          const reactDomUrl = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
+          const depUrls: Record<string, string> = {};
+          const depVersions = dependencies ?? {};
+          const basePkg = (s: string) => (s.startsWith('@') ? s.split('/').slice(0, 2).join('/') : s.split('/')[0]);
+          for (const [pkg, version] of Object.entries(depVersions)) {
+            depUrls[pkg] = `https://esm.sh/${pkg}@${version}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+          }
+
+          // Parse import statements, strip them, and convert to __deps__ destructuring
+          const destructLines: string[] = [];
+          let hasExplicitReturn = false;
+
+          // Helper: ensure a dependency URL exists for a specifier
+          const ensureDep = (specifier: string): boolean => {
+            if (specifier === 'react' || specifier.startsWith('react-dom')) return false;
+            if (!depUrls[specifier]) {
+              const base = basePkg(specifier);
+              const version = depVersions[base];
+              if (!version) return false;
+              const subpath = specifier.slice(base.length);
+              depUrls[specifier] =
+                `https://esm.sh/${base}@${version}${subpath}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+            }
+            return true;
+          };
+
+          const strippedCode = code
+            // Strip side-effect imports: import "pkg";
+            .replace(/^\s*import\s+['"]([^'"]+)['"]\s*;?\s*$/gm, (_m: string, specifier: string) => {
+              ensureDep(specifier);
+              return '';
+            })
+            // Strip import ... from "pkg" and convert to __deps__ destructuring
+            .replace(
+              /^\s*import\s+(.+?)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/gm,
+              (_match: string, clause: string, specifier: string) => {
+                if (!ensureDep(specifier)) return '';
+
+                const safeKey = JSON.stringify(specifier);
+                clause = clause.trim();
+
+                if (clause.startsWith('* as ')) {
+                  destructLines.push(`var ${clause.slice(5).trim()} = __deps__[${safeKey}];`);
+                } else if (clause.startsWith('{')) {
+                  destructLines.push(`var ${clause} = __deps__[${safeKey}];`);
+                } else if (clause.includes(',')) {
+                  const commaIdx = clause.indexOf(',');
+                  const defaultName = clause.slice(0, commaIdx).trim();
+                  const rest = clause.slice(commaIdx + 1).trim();
+                  destructLines.push(`var ${defaultName} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+                  if (rest.startsWith('{')) {
+                    destructLines.push(`var ${rest} = __deps__[${safeKey}];`);
+                  }
+                } else {
+                  destructLines.push(`var ${clause} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+                }
+                return '';
+              },
+            )
+            // Convert "export default X" → "return X"
+            .replace(/^\s*export\s+default\s+/gm, () => {
+              hasExplicitReturn = true;
+              return 'return ';
+            })
+            // Drop named export blocks: export { ... };
+            .replace(/^\s*export\s+\{[^}]*\}\s*;?\s*$/gm, '')
+            // Strip "export" keyword from declarations: export function/const/let/var/class
+            .replace(/^\s*export\s+(function|const|let|var|class)\s+/gm, '$1 ');
+
+          let transformedCode = destructLines.join('\n') + '\n' + strippedCode;
+          try {
+            transformedCode = transform(transformedCode, { transforms: ['jsx'] }).code;
+          } catch {
+            // Code may already be plain JS
+          }
+
+          // Auto-append return if missing
+          const trimmed = transformedCode.trim();
+          if (!hasExplicitReturn && !trimmed.match(/return\s+\w+\s*;?\s*$/)) {
+            const fnMatch = trimmed.match(/function\s+([A-Z]\w*)\s*\(/);
+            if (fnMatch) {
+              transformedCode = transformedCode + '\nreturn ' + fnMatch[1] + ';';
+            }
+          }
+
+          await chrome.scripting.executeScript({
+            target: { tabId },
+            world: 'MAIN',
+            func: async (
+              componentCode: string,
+              mId: string,
+              cId: string,
+              pUrl: string,
+              eId: string,
+              depUrlMap: Record<string, string>,
+              rUrl: string,
+              rdUrl: string,
+            ) => {
+              // Load React + ReactDOM from esm.sh (same instance used by dependencies via ?deps)
+              let React: unknown;
+              let ReactDOM: unknown;
+              const __deps__: Record<string, unknown> = {};
+              try {
+                const [reactMod, reactDomMod, ...depMods] = await Promise.all([
+                  import(/* webpackIgnore: true */ rUrl),
+                  import(/* webpackIgnore: true */ rdUrl),
+                  ...Object.values(depUrlMap).map(url => import(/* webpackIgnore: true */ url)),
+                ]);
+                React = reactMod.default || reactMod;
+                ReactDOM = reactDomMod;
+                Object.keys(depUrlMap).forEach((key, i) => {
+                  __deps__[key] = depMods[i];
+                });
+              } catch (err) {
+                console.error('[Conjure] Failed to load dependencies:', err);
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Failed to load dependencies — ' +
+                    ((err as Error).message || String(err)).replace(/</g, '&lt;') +
+                    '</div>';
+                }
+                return;
+              }
+
+              // Build context
+              let _nextReqId = 0;
+              const extDbCall = (action: string, payload: Record<string, unknown>): Promise<unknown> =>
+                new Promise((resolve, reject) => {
+                  const reqId = 'db' + ++_nextReqId + '_' + Date.now();
+                  const handler = (e: Event) => {
+                    window.removeEventListener('conjure-ext-db-' + reqId, handler);
+                    const d = (e as CustomEvent).detail;
+                    if (d.error) reject(new Error(d.error));
+                    else resolve(d.result);
+                  };
+                  window.addEventListener('conjure-ext-db-' + reqId, handler);
+                  window.dispatchEvent(
+                    new CustomEvent('conjure-ext-db', {
+                      detail: { extensionId: eId, action, payload, requestId: reqId },
+                    }),
+                  );
+                });
+
+              const getData = (): Promise<Record<string, unknown>> =>
+                extDbCall('storageGet', { key: cId + ':' + pUrl }) as Promise<Record<string, unknown>>;
+              const setData = (data: Record<string, unknown>): Promise<void> =>
+                extDbCall('storageSet', { key: cId + ':' + pUrl, data }) as Promise<void>;
+              const sendMessage = (data: unknown): void => {
+                window.dispatchEvent(
+                  new CustomEvent('conjure-send-worker-message', { detail: { extensionId: eId, data } }),
+                );
+              };
+              const onWorkerMessage = (callback: (data: unknown) => void): (() => void) => {
+                const handler = (e: Event) => {
+                  const detail = (e as CustomEvent).detail;
+                  if (detail?.extensionId !== eId) return;
+                  callback(detail.data);
+                };
+                window.addEventListener('conjure-worker-message', handler);
+                return () => window.removeEventListener('conjure-worker-message', handler);
+              };
+              const db = {
+                createTables: (tables: Record<string, string>) => extDbCall('createTables', { tables }),
+                removeTables: (tableNames: string[]) => extDbCall('removeTables', { tableNames }),
+                getSchema: () => extDbCall('getSchema', {}),
+                put: (table: string, data: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'put', table, data } }),
+                add: (table: string, data: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'add', table, data } }),
+                get: (table: string, key: string | number) =>
+                  extDbCall('query', { operation: { type: 'get', table, key } }),
+                getAll: (table: string) => extDbCall('query', { operation: { type: 'getAll', table } }),
+                update: (table: string, key: string | number, changes: Record<string, unknown>) =>
+                  extDbCall('query', { operation: { type: 'update', table, key, changes } }),
+                delete: (table: string, key: string | number) =>
+                  extDbCall('query', { operation: { type: 'delete', table, key } }),
+                where: (table: string, index: string, value: unknown, limit?: number) =>
+                  extDbCall('query', { operation: { type: 'where', table, index, value, limit } }),
+                bulkPut: (table: string, data: Record<string, unknown>[]) =>
+                  extDbCall('query', { operation: { type: 'bulkPut', table, data } }),
+                bulkDelete: (table: string, keys: (string | number)[]) =>
+                  extDbCall('query', { operation: { type: 'bulkDelete', table, keys } }),
+                count: (table: string) => extDbCall('query', { operation: { type: 'count', table } }),
+                clear: (table: string) => extDbCall('query', { operation: { type: 'clear', table } }),
+              };
+              const env = {
+                async get(key: string): Promise<string | null> {
+                  const envData = ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
+                  return envData[key] ?? null;
+                },
+                async getAll(): Promise<Record<string, string>> {
+                  return ((await extDbCall('storageGet', { key: '_env' })) ?? {}) as Record<string, string>;
+                },
+              };
+              const context = { getData, setData, pageUrl: pUrl, sendMessage, onWorkerMessage, db, env };
+
+              // Execute component via new Function (bypasses page CSP from extension context)
+              try {
+                const componentFn = new Function('React', 'ReactDOM', 'context', '__deps__', componentCode);
+                const ComponentResult = componentFn(React, ReactDOM, context, __deps__);
+
+                if (!ComponentResult) {
+                  throw new Error('Component did not return a valid React component');
+                }
+
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  const root = (
+                    ReactDOM as { createRoot: (el: HTMLElement) => { render: (el: unknown) => void } }
+                  ).createRoot(mountEl);
+                  root.render(
+                    (React as { createElement: (type: unknown, props: unknown) => unknown }).createElement(
+                      ComponentResult,
+                      { context },
+                    ),
+                  );
+                }
+              } catch (err: unknown) {
+                console.error('[Conjure] Component render error:', err);
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: Component render error — ' +
+                    (err instanceof Error ? err.message : String(err)).replace(/</g, '&lt;') +
+                    '</div>';
+                }
+              }
+            },
+            args: [transformedCode, mountId, componentId, pageUrl, extId ?? '', depUrls, reactUrl, reactDomUrl],
           });
         }
         return { success: true };

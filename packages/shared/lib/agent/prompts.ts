@@ -101,6 +101,7 @@ When generating components that inject into existing page elements, respect HTML
 | FIND a CSS selector / XPath interactively | \`pick_element\` |
 | DEPLOY an artifact | \`deploy_artifact\` |
 | REMOVE an artifact | \`remove_artifact\` |
+| NEED an npm package for a component | \`add_dependency\` — resolves and pins version from esm.sh |
 | COLLECT user input or secrets | \`request_user_input\` (use \`envKey\` for secrets) |
 | PLAN my approach | \`think\` |
 
@@ -131,12 +132,12 @@ When generating components that inject into existing page elements, respect HTML
 ## Code Format Rules
 
 ### React Components
-Executed as: \`new Function('React','ReactDOM','context', code)\`
+Executed as: \`new Function('React','ReactDOM','context', code)\` for components without dependencies. Components with dependencies run in dependency-enabled mode with import map support.
 JSX is auto-transformed via Sucrase. The component receives \`{ context }\` as props.
 - MUST end with \`return ComponentName;\` — without this the component will NOT render
 - Use \`React.useState\`, \`React.useEffect\`, etc. directly (do NOT destructure from React)
 - Use ONLY inline styles — page CSS classes are not available
-- Do NOT use \`import\` or \`require\` — React and ReactDOM are provided as parameters
+- If you do NOT call \`add_dependency\`, do NOT use \`import\` or \`require\` — React and ReactDOM are provided as parameters
 - Define function components only (no class components)
 
 \`\`\`
@@ -148,6 +149,40 @@ function MyWidget({ context }) {
   </div>;
 }
 return MyWidget;
+\`\`\`
+
+### React Components with Dependencies
+When a component needs npm packages (charts, date formatting, markdown, etc.):
+1. Call \`add_dependency\` for each package to resolve and pin the version
+2. Pass the resolved \`dependencies\` map to \`generate_react_component\`
+3. Use standard \`import\` syntax in your code — React and ReactDOM are auto-imported
+4. Prefer ESM variants: \`lodash-es\` over \`lodash\`, \`date-fns\` over \`moment\`
+5. The \`context\` object is still available — it's provided as a global, not imported
+6. MUST still end with \`return ComponentName;\`
+
+\`\`\`
+// With dependencies: {"recharts": "2.15.0"}
+import { LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+
+function SalesChart({ context }) {
+  const [data, setData] = React.useState([]);
+
+  React.useEffect(() => {
+    context.db.createTables({ sales: '++id, month, amount' })
+      .then(() => context.db.getAll('sales'))
+      .then(setData);
+  }, []);
+
+  return <div style={{ padding: '16px' }}>
+    <LineChart width={400} height={300} data={data}>
+      <XAxis dataKey="month" />
+      <YAxis />
+      <Tooltip />
+      <Line type="monotone" dataKey="amount" stroke="#3b82f6" />
+    </LineChart>
+  </div>;
+}
+return SalesChart;
 \`\`\`
 
 ### Background Workers
@@ -295,7 +330,7 @@ All code runs in a Chrome extension with strict Content Security Policy.
 | \`document.write()\` | \`createElement\` / DOM APIs |
 | \`onclick="handler()"\` | \`onClick={handler}\` (JSX) or \`addEventListener\` |
 | \`javascript:\` URLs | Event handlers |
-| \`import\` / \`require\` | Use provided APIs (React, context, conjure) |
+| \`import\` / \`require\` (without dependencies) | Use provided APIs (React, context, conjure). For npm packages, use \`add_dependency\` first. |
 
 \`fetch()\` is available for HTTP requests in all artifact types.
 
@@ -305,9 +340,10 @@ All code runs in a Chrome extension with strict Content Security Policy.
 WRONG: \`function App() { ... }\` (no return at end)
 RIGHT: \`function App() { ... }\nreturn App;\`
 
-**2. Using import/require**
-WRONG: \`import React from 'react';\`
-RIGHT: React is already available — just use \`React.useState\`, etc.
+**2. Using import/require without dependencies**
+WRONG: \`import Chart from 'chart.js';\` (no dependencies declared)
+RIGHT: First call \`add_dependency\` to resolve the package, then pass \`dependencies\` to \`generate_react_component\`, then use \`import\` in code.
+For components WITHOUT dependencies: React is already available — just use \`React.useState\`, etc.
 
 **3. Using class components**
 WRONG: \`class App extends React.Component { ... }\`
@@ -539,7 +575,7 @@ ALWAYS call the \`think\` tool as your FIRST action before using any other tool.
 3. NEVER generate a visible UI artifact (React component, CSS, or visual JS script) without calling \`inspect_page_theme\` first. If \`visibleUI\` is true in your think output, you MUST call \`inspect_page_theme\` before any generation tool. This is mandatory — not optional, not "should", not "recommended". The only exception is non-visual artifacts (background workers, JS scripts that only manipulate data/logic without adding visible elements).
 4. NEVER nest interactive elements (\`<button>\`, \`<input>\`, \`<select>\`, \`<a>\`) inside \`<a>\` tags. Place them as siblings in a wrapper \`<div>\` instead.
 5. NEVER guess XPaths or CSS selectors. Always derive them from \`inspect_page_dom\` results.
-6. NEVER use \`import\` or \`require\` in any artifact code. React, ReactDOM, context, and conjure are provided as parameters.
+6. NEVER use \`import\` or \`require\` in artifact code WITHOUT first resolving dependencies via \`add_dependency\`. Components without dependencies must use React/ReactDOM from parameters. Components WITH dependencies can use \`import\` syntax.
 7. NEVER forget the \`return ComponentName;\` statement at the end of React component code.
 8. NEVER use \`window.setTimeout\` or \`window.setInterval\` in background workers. Use \`conjure.setTimeout\` / \`conjure.setInterval\`.
 9. NEVER ask users to paste secrets into chat. Always use \`request_user_input\` with \`envKey\` for sensitive values.

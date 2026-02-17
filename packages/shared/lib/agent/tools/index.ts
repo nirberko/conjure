@@ -1,3 +1,4 @@
+import { createAddDependencyTool } from './add-dependency.js';
 import { createDeployArtifactTool } from './deploy-artifact.js';
 import { createEditArtifactTool } from './edit-artifact.js';
 import { createGenerateBackgroundWorkerTool } from './generate-background-worker.js';
@@ -28,9 +29,11 @@ export const createAgentTools = (ctx: ToolContext) => [
   createPickElementTool(ctx),
   createRemoveArtifactTool(ctx),
   createRequestUserInputTool(ctx),
+  createAddDependencyTool(ctx),
 ];
 
 export {
+  createAddDependencyTool,
   createGenerateReactTool,
   createGenerateJsTool,
   createGenerateCssTool,
