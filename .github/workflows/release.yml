@@ -36,6 +36,7 @@ jobs:
         id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HUSKY: '0'
         run: npx semantic-release
       - name: Find extension zip
         id: find-zip
