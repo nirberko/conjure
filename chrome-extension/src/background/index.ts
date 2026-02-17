@@ -430,45 +430,64 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           // Parse import statements, strip them, and convert to __deps__ destructuring
           const destructLines: string[] = [];
-          const strippedCode = code.replace(
-            /^\s*import\s+(.+?)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/gm,
-            (_match: string, clause: string, specifier: string) => {
-              // Skip react/react-dom — provided via runtime
-              if (specifier === 'react' || specifier.startsWith('react-dom')) return '';
-              // Handle subpath imports (e.g., 'date-fns/format') by resolving from base package
-              if (!depUrls[specifier]) {
-                const base = basePkg(specifier);
-                const version = depVersions[base];
-                if (version) {
-                  const subpath = specifier.slice(base.length);
-                  depUrls[specifier] =
-                    `https://esm.sh/${base}@${version}${subpath}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
-                } else {
-                  return '';
-                }
-              }
+          let hasExplicitReturn = false;
 
-              const safeKey = JSON.stringify(specifier);
-              clause = clause.trim();
+          // Helper: ensure a dependency URL exists for a specifier
+          const ensureDep = (specifier: string): boolean => {
+            if (specifier === 'react' || specifier.startsWith('react-dom')) return false;
+            if (!depUrls[specifier]) {
+              const base = basePkg(specifier);
+              const version = depVersions[base];
+              if (!version) return false;
+              const subpath = specifier.slice(base.length);
+              depUrls[specifier] =
+                `https://esm.sh/${base}@${version}${subpath}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+            }
+            return true;
+          };
 
-              if (clause.startsWith('* as ')) {
-                destructLines.push(`var ${clause.slice(5).trim()} = __deps__[${safeKey}];`);
-              } else if (clause.startsWith('{')) {
-                destructLines.push(`var ${clause} = __deps__[${safeKey}];`);
-              } else if (clause.includes(',')) {
-                const commaIdx = clause.indexOf(',');
-                const defaultName = clause.slice(0, commaIdx).trim();
-                const rest = clause.slice(commaIdx + 1).trim();
-                destructLines.push(`var ${defaultName} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
-                if (rest.startsWith('{')) {
-                  destructLines.push(`var ${rest} = __deps__[${safeKey}];`);
-                }
-              } else {
-                destructLines.push(`var ${clause} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
-              }
+          const strippedCode = code
+            // Strip side-effect imports: import "pkg";
+            .replace(/^\s*import\s+['"]([^'"]+)['"]\s*;?\s*$/gm, (_m: string, specifier: string) => {
+              ensureDep(specifier);
               return '';
-            },
-          );
+            })
+            // Strip import ... from "pkg" and convert to __deps__ destructuring
+            .replace(
+              /^\s*import\s+(.+?)\s+from\s+['"]([^'"]+)['"]\s*;?\s*$/gm,
+              (_match: string, clause: string, specifier: string) => {
+                if (!ensureDep(specifier)) return '';
+
+                const safeKey = JSON.stringify(specifier);
+                clause = clause.trim();
+
+                if (clause.startsWith('* as ')) {
+                  destructLines.push(`var ${clause.slice(5).trim()} = __deps__[${safeKey}];`);
+                } else if (clause.startsWith('{')) {
+                  destructLines.push(`var ${clause} = __deps__[${safeKey}];`);
+                } else if (clause.includes(',')) {
+                  const commaIdx = clause.indexOf(',');
+                  const defaultName = clause.slice(0, commaIdx).trim();
+                  const rest = clause.slice(commaIdx + 1).trim();
+                  destructLines.push(`var ${defaultName} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+                  if (rest.startsWith('{')) {
+                    destructLines.push(`var ${rest} = __deps__[${safeKey}];`);
+                  }
+                } else {
+                  destructLines.push(`var ${clause} = __deps__[${safeKey}].default || __deps__[${safeKey}];`);
+                }
+                return '';
+              },
+            )
+            // Convert "export default X" → "return X"
+            .replace(/^\s*export\s+default\s+/gm, () => {
+              hasExplicitReturn = true;
+              return 'return ';
+            })
+            // Drop named export blocks: export { ... };
+            .replace(/^\s*export\s+\{[^}]*\}\s*;?\s*$/gm, '')
+            // Strip "export" keyword from declarations: export function/const/let/var/class
+            .replace(/^\s*export\s+(function|const|let|var|class)\s+/gm, '$1 ');
 
           let transformedCode = destructLines.join('\n') + '\n' + strippedCode;
           try {
@@ -479,7 +498,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
           // Auto-append return if missing
           const trimmed = transformedCode.trim();
-          if (!trimmed.match(/return\s+\w+\s*;?\s*$/)) {
+          if (!hasExplicitReturn && !trimmed.match(/return\s+\w+\s*;?\s*$/)) {
             const fnMatch = trimmed.match(/function\s+([A-Z]\w*)\s*\(/);
             if (fnMatch) {
               transformedCode = transformedCode + '\nreturn ' + fnMatch[1] + ';';

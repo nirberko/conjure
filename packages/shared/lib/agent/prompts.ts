@@ -168,8 +168,9 @@ function SalesChart({ context }) {
   const [data, setData] = React.useState([]);
 
   React.useEffect(() => {
-    context.db.createTables({ sales: '++id, month, amount' });
-    context.db.getAll('sales').then(setData);
+    context.db.createTables({ sales: '++id, month, amount' })
+      .then(() => context.db.getAll('sales'))
+      .then(setData);
   }, []);
 
   return <div style={{ padding: '16px' }}>
