@@ -47,13 +47,17 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
     [pageSize],
   );
 
-  // Load tables on mount, when extensionId changes, or when tab becomes active
+  // Reset selection when the extension changes
   useEffect(() => {
-    if (isActive === false) return;
     setSelectedTable('');
     setPage(0);
     setRows([]);
     setTotalCount(0);
+  }, [extensionId]);
+
+  // Fetch tables when tab becomes active or extensionId changes
+  useEffect(() => {
+    if (isActive === false) return;
     fetchTables(extensionId);
   }, [extensionId, fetchTables, isActive]);
 

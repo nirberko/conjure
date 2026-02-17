@@ -423,7 +423,7 @@ const chatReducerWithEffects = (state: ChatState, action: ChatAction): ReducerRe
 
 const chatReducer = (state: ChatState, action: ChatAction): ChatState => {
   const [newState, ops] = chatReducerWithEffects(state, action);
-  return { ...newState, _pendingOps: [...state._pendingOps, ...ops] };
+  return { ...newState, _pendingOps: [...newState._pendingOps, ...ops] };
 };
 
 export const useAgentChat = (extensionId: string) => {

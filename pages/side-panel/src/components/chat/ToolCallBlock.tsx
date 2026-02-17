@@ -28,7 +28,8 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
     }
   };
 
-  const hasDetails = Object.entries(toolCall.args).length > 0 || (toolCall.result != null && toolCall.result !== '');
+  const hasDetails =
+    Object.entries(toolCall.args ?? {}).length > 0 || (toolCall.result != null && toolCall.result !== '');
 
   return (
     <div className="space-y-2">
@@ -52,8 +53,8 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
       {expanded && (
         <>
           {/* Code block with args */}
-          {Object.entries(toolCall.args).length > 0 ? (
-            <CodeBlock code={JSON.stringify(toolCall.args, null, 2)} language="json" />
+          {Object.entries(toolCall.args ?? {}).length > 0 ? (
+            <CodeBlock code={JSON.stringify(toolCall.args ?? {}, null, 2)} language="json" />
           ) : (
             <CodeBlock code={t('chatToolNoArguments')} language="text" showLineNumbers={false} />
           )}
