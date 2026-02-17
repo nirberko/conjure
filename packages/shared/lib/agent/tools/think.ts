@@ -3,12 +3,23 @@ import { z } from 'zod';
 
 export const createThinkTool = () =>
   tool(
-    async ({ goal, pageInteraction, domNeeded, needsWorker, artifactType, steps, existingArtifacts, risks }) =>
+    async ({
+      goal,
+      pageInteraction,
+      domNeeded,
+      visibleUI,
+      needsWorker,
+      artifactType,
+      steps,
+      existingArtifacts,
+      risks,
+    }) =>
       JSON.stringify({
         success: true,
         goal,
         pageInteraction,
         domNeeded,
+        visibleUI,
         needsWorker,
         artifactType,
         steps,
@@ -23,6 +34,11 @@ export const createThinkTool = () =>
         goal: z.string().describe('What the user is asking for (one sentence)'),
         pageInteraction: z.boolean().describe('Does this involve existing page elements?'),
         domNeeded: z.boolean().describe('Do I need to inspect the DOM before generating code?'),
+        visibleUI: z
+          .boolean()
+          .describe(
+            'Does this task generate or modify a visible UI component (React component, CSS, or JS that injects visible elements)? If true, you MUST call inspect_page_theme before any generation tool.',
+          ),
         needsWorker: z
           .boolean()
           .describe(
