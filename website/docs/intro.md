@@ -13,7 +13,7 @@ Describe what you want in natural language; the AI agent generates code, deploys
 - **AI-powered generation** — Describe UI components or scripts in plain English; the AI writes the code
 - **Multi-provider AI support** — OpenAI, Anthropic, and Google Gemini with configurable models
 - **Autonomous agent workflow** — A LangGraph-based agent that plans, generates, edits, deploys, inspects, and verifies artifacts
-- **Live injection** — React components, JavaScript, and CSS are injected directly into pages in real time
+- **Live injection** — React components, JavaScript, and CSS are injected directly into pages in real-time
 - **URL pattern matching** — Artifacts auto-inject on matching pages using wildcard URL patterns
 - **Element picker** — Visual CSS selector picker to target specific DOM elements
 - **Background workers** — Persistent workers that run in Chrome's offscreen document

@@ -8,7 +8,7 @@ Conjure is built as a **Turborepo monorepo** with **pnpm workspaces**. It uses *
 
 ## Project Structure
 
-```
+```text
 conjure/
 ├── chrome-extension/          # Extension entry point
 │   ├── manifest.ts            # MV3 manifest definition
@@ -46,7 +46,7 @@ conjure/
 
 ## Message Passing
 
-```
+```text
 Side Panel ──sendMessage──▶ Background Service Worker ──sendMessage──▶ Content Script
          │                              │
          │                              ├── sendMessage ──▶ Offscreen (background workers)
