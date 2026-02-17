@@ -438,7 +438,10 @@ export const useAgentChat = (extensionId: string) => {
 
   // --- Drain persistence effects after each render ---
   useEffect(() => {
-    if (state._pendingOps.length === 0) return;
+    if (state._pendingOps.length === 0) {
+      opsExtensionIdRef.current = extensionId;
+      return;
+    }
     const ops = state._pendingOps;
     dispatch({ type: 'DRAIN_OPS' });
 
