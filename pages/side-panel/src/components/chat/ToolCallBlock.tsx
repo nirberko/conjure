@@ -37,7 +37,9 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
       {/* Header: always visible, clickable to expand/collapse when there are details */}
       <button
         type="button"
-        onClick={() => hasDetails && setExpanded(e => !e)}
+        disabled={!hasDetails}
+        aria-disabled={!hasDetails}
+        onClick={hasDetails ? () => setExpanded(e => !e) : undefined}
         className={`flex w-full items-center gap-2 text-left font-mono text-xs text-slate-500 ${hasDetails ? 'cursor-pointer hover:text-slate-400' : 'cursor-default'}`}>
         <span className="material-symbols-outlined text-[14px]">{toolMeta.icon}</span>
         <span className="pointer-events-none uppercase tracking-wider">{toolMeta.label}</span>

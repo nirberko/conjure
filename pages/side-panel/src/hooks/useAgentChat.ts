@@ -455,10 +455,12 @@ export const useAgentChat = (extensionId: string) => {
 
   // --- Load conversation from DB + check agent status ---
   useEffect(() => {
+    let cancelled = false;
+
     chrome.runtime
       .sendMessage({ type: 'GET_AGENT_STATUS', payload: { extensionId } })
       .then((response: { isRunning?: boolean }) => {
-        if (response?.isRunning) {
+        if (!cancelled && response?.isRunning) {
           dispatch({ type: 'AGENT_STATUS', isRunning: true });
         }
       })
@@ -466,6 +468,7 @@ export const useAgentChat = (extensionId: string) => {
 
     getAgentConversation(extensionId)
       .then(conversation => {
+        if (cancelled) return;
         if (conversation && conversation.messages.length > 0) {
           // Resolve any pending tool calls to 'done' (they were in-flight when session ended)
           const restored: AgentChatMessage[] = conversation.messages.map(m => {
@@ -497,8 +500,14 @@ export const useAgentChat = (extensionId: string) => {
       })
       .catch(err => {
         console.error('[Conjure] Failed to load chat history:', err);
-        dispatch({ type: 'LOADED', messages: [], maxId: 0 });
+        if (!cancelled) {
+          dispatch({ type: 'LOADED', messages: [], maxId: 0 });
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [extensionId]);
 
   // --- Listen for stream events from background ---

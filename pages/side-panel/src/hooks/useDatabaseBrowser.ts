@@ -49,6 +49,7 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
 
   // Reset selection when the extension changes
   useEffect(() => {
+    setTables([]);
     setSelectedTable('');
     setPage(0);
     setRows([]);
