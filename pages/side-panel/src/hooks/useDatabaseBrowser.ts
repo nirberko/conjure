@@ -61,15 +61,15 @@ export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
     fetchTables(extensionId);
   }, [extensionId, fetchTables, isActive]);
 
-  // Load rows when table or page changes
+  // Load rows when table or page changes, or tab re-activates
   useEffect(() => {
-    if (selectedTable) {
+    if (selectedTable && isActive !== false) {
       fetchRows(selectedTable, page, extensionId);
-    } else {
+    } else if (!selectedTable) {
       setRows([]);
       setTotalCount(0);
     }
-  }, [selectedTable, page, extensionId, fetchRows]);
+  }, [selectedTable, page, extensionId, fetchRows, isActive]);
 
   const selectTable = useCallback((tableName: string) => {
     setSelectedTable(tableName);

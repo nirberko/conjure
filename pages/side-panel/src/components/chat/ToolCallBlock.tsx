@@ -8,6 +8,8 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
   const [expanded, setExpanded] = useState(false);
   const toolMeta = getToolMetadata(toolCall.name);
 
+  const safeArgs = toolCall.args ?? {};
+
   const statusIcon =
     toolCall.status === 'pending' ? (
       <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
@@ -28,8 +30,7 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
     }
   };
 
-  const hasDetails =
-    Object.entries(toolCall.args ?? {}).length > 0 || (toolCall.result != null && toolCall.result !== '');
+  const hasDetails = Object.entries(safeArgs).length > 0 || (toolCall.result != null && toolCall.result !== '');
 
   return (
     <div className="space-y-2">
@@ -53,8 +54,8 @@ export const ToolCallBlock = ({ toolCall }: { toolCall: ToolCallDisplay }) => {
       {expanded && (
         <>
           {/* Code block with args */}
-          {Object.entries(toolCall.args ?? {}).length > 0 ? (
-            <CodeBlock code={JSON.stringify(toolCall.args ?? {}, null, 2)} language="json" />
+          {Object.entries(safeArgs).length > 0 ? (
+            <CodeBlock code={JSON.stringify(safeArgs, null, 2)} language="json" />
           ) : (
             <CodeBlock code={t('chatToolNoArguments')} language="text" showLineNumbers={false} />
           )}

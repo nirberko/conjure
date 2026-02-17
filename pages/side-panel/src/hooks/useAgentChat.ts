@@ -545,12 +545,23 @@ export const useAgentChat = (extensionId: string) => {
           break;
 
         case 'tool_result':
-          dispatch({
-            type: 'STREAM_TOOL_RESULT',
-            toolName: event.data.toolName ?? 'unknown',
-            toolResult:
-              typeof event.data.toolResult === 'string' ? event.data.toolResult : JSON.stringify(event.data.toolResult),
-          });
+          {
+            let toolResult: string;
+            if (typeof event.data.toolResult === 'string') {
+              toolResult = event.data.toolResult;
+            } else {
+              try {
+                toolResult = JSON.stringify(event.data.toolResult);
+              } catch {
+                toolResult = String(event.data.toolResult);
+              }
+            }
+            dispatch({
+              type: 'STREAM_TOOL_RESULT',
+              toolName: event.data.toolName ?? 'unknown',
+              toolResult,
+            });
+          }
           break;
 
         case 'response':
