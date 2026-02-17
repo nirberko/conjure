@@ -1,6 +1,5 @@
+import { REACT_VERSION } from '@extension/shared';
 import type { Artifact } from '@extension/shared';
-
-const REACT_VERSION = '19.1.0';
 
 const buildImportMap = (artifacts: Artifact[]): Record<string, string> => {
   const imports: Record<string, string> = {
@@ -13,7 +12,13 @@ const buildImportMap = (artifacts: Artifact[]): Record<string, string> => {
   for (const artifact of artifacts) {
     if (!artifact.dependencies) continue;
     for (const [pkg, version] of Object.entries(artifact.dependencies)) {
-      if (imports[pkg]) continue; // first-loaded wins
+      if (imports[pkg]) {
+        const incomingUrl = `https://esm.sh/${pkg}@${version}?external=react,react-dom`;
+        if (imports[pkg] !== incomingUrl) {
+          console.warn(`[Conjure] Import map conflict for "${pkg}": keeping ${imports[pkg]}, ignoring ${incomingUrl}`);
+        }
+        continue;
+      }
       imports[pkg] = `https://esm.sh/${pkg}@${version}?external=react,react-dom`;
     }
   }

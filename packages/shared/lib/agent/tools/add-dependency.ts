@@ -17,10 +17,13 @@ export const resolvePackageVersion = async (
     }
 
     const resolvedUrl = response.url;
-    const versionMatch = resolvedUrl.match(new RegExp(`${packageName.replace('/', '\\/')}@([\\d.]+[\\w.-]*)`));
+    const escapedName = packageName.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&');
+    const versionMatch = resolvedUrl.match(new RegExp(`${escapedName}@([\\d.]+[\\w.-]*)`));
 
     if (!versionMatch) {
-      return { version: version ?? 'latest' };
+      return version
+        ? { version }
+        : { error: `Could not determine pinned version for "${packageName}" from ${resolvedUrl}` };
     }
 
     return { version: versionMatch[1] };

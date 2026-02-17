@@ -1,3 +1,4 @@
+import { injectImportMap } from './import-map.js';
 import type { Artifact } from '@extension/shared';
 
 const injectedArtifacts = new Map<string, { elements: HTMLElement[]; cleanup: () => void }>();
@@ -229,6 +230,12 @@ const removeArtifact = (artifactId: string) => {
 const isArtifactInjected = (artifactId: string): boolean => injectedArtifacts.has(artifactId);
 
 const injectArtifactsBatch = async (artifacts: Artifact[]): Promise<void> => {
+  // Set up import maps before any module scripts execute
+  const hasModuleDeps = artifacts.some(a => a.dependencies && Object.keys(a.dependencies).length > 0);
+  if (hasModuleDeps) {
+    injectImportMap(artifacts);
+  }
+
   for (const artifact of artifacts) {
     await injectArtifact(artifact);
   }

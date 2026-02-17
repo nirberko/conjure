@@ -25,6 +25,7 @@ import {
   getArtifactsByExtension,
   extensionDBManager,
   db,
+  REACT_VERSION,
 } from '@extension/shared';
 import { transform } from 'sucrase';
 import type { Extension, AIProvider, ExtDBOperation } from '@extension/shared';
@@ -156,6 +157,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               }
               if (!_WF) {
                 console.error('[Conjure] React runtime not loaded');
+                const mountEl = document.getElementById(mId);
+                if (mountEl) {
+                  mountEl.innerHTML =
+                    '<div style="padding:12px;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;border-radius:6px;font:13px system-ui;">Conjure: React runtime failed to load. Try reloading the page.</div>';
+                }
                 return;
               }
 
@@ -413,7 +419,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const pageUrl = tab.url || '';
 
           // Build dependency URL map — use ?deps to rewrite bare 'react' specifiers to full URLs
-          const REACT_VERSION = '19.1.0';
           const reactUrl = `https://esm.sh/react@${REACT_VERSION}`;
           const reactDomUrl = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
           const depUrls: Record<string, string> = {};

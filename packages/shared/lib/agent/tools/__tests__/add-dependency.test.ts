@@ -1,6 +1,6 @@
 import { getArtifact, updateArtifact } from '../../../db/index.js';
 import { createAddDependencyTool } from '../add-dependency.js';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ToolContext } from '../../types.js';
 
 vi.mock('../../../db/index.js', () => ({
@@ -19,6 +19,7 @@ const createMockToolContext = (overrides: Partial<ToolContext> = {}): ToolContex
 
 describe('add_dependency tool', () => {
   let ctx: ToolContext;
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
     ctx = createMockToolContext();
@@ -35,6 +36,10 @@ describe('add_dependency tool', () => {
       updatedAt: 0,
     });
     (updateArtifact as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
   });
 
   it('resolves a package version from esm.sh and updates artifact', async () => {
@@ -76,6 +81,11 @@ describe('add_dependency tool', () => {
   });
 
   it('returns error when artifact not found', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      url: 'https://esm.sh/recharts@2.15.0',
+      status: 200,
+    });
     (getArtifact as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     const tool = createAddDependencyTool(ctx);

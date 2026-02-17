@@ -8,7 +8,7 @@ const BUILTIN_SPECIFIERS = new Set(['react', 'react-dom', 'react-dom/client']);
 
 const extractImportedPackages = (code: string): string[] => {
   const packages = new Set<string>();
-  const importRegex = /^\s*import\s+.+?\s+from\s+['"]([^'"./][^'"]*)['"]\s*;?\s*$/gm;
+  const importRegex = /import\s+[\s\S]+?\s+from\s+['"]([^'"./][^'"]*)['"]\s*;?/g;
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     const specifier = match[1];
@@ -28,6 +28,8 @@ export const createGenerateReactTool = (ctx: ToolContext) =>
       const importedPackages = extractImportedPackages(code);
       let resolvedDeps = dependencies ? { ...dependencies } : undefined;
 
+      const failedResolutions: Array<{ package: string; error: string }> = [];
+
       if (importedPackages.length > 0) {
         const missing = importedPackages.filter(pkg => !resolvedDeps?.[pkg]);
         if (missing.length > 0) {
@@ -37,6 +39,8 @@ export const createGenerateReactTool = (ctx: ToolContext) =>
             const result = results[i];
             if ('version' in result) {
               resolvedDeps[missing[i]] = result.version;
+            } else {
+              failedResolutions.push({ package: missing[i], error: result.error });
             }
           }
         }
@@ -56,10 +60,15 @@ export const createGenerateReactTool = (ctx: ToolContext) =>
             .map(([k, v]) => `${k}@${v}`)
             .join(', ')}`
         : '';
+      const failedInfo =
+        failedResolutions.length > 0
+          ? ` Failed to resolve: ${failedResolutions.map(f => `${f.package} (${f.error})`).join(', ')}`
+          : '';
       return JSON.stringify({
         success: true,
         artifactId: artifact.id,
-        message: `React component "${name}" created successfully.${description ? ` Description: ${description}` : ''}${depsInfo}`,
+        ...(failedResolutions.length > 0 && { failedResolutions }),
+        message: `React component "${name}" created successfully.${description ? ` Description: ${description}` : ''}${depsInfo}${failedInfo}`,
       });
     },
     {
