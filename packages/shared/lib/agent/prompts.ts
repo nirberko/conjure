@@ -132,12 +132,12 @@ When generating components that inject into existing page elements, respect HTML
 ## Code Format Rules
 
 ### React Components
-Executed as: \`new Function('React','ReactDOM','context', code)\`
+Executed as: \`new Function('React','ReactDOM','context', code)\` for components without dependencies. Components with dependencies run in dependency-enabled mode with import map support.
 JSX is auto-transformed via Sucrase. The component receives \`{ context }\` as props.
 - MUST end with \`return ComponentName;\` — without this the component will NOT render
 - Use \`React.useState\`, \`React.useEffect\`, etc. directly (do NOT destructure from React)
 - Use ONLY inline styles — page CSS classes are not available
-- Do NOT use \`import\` or \`require\` — React and ReactDOM are provided as parameters
+- If you do NOT call \`add_dependency\`, do NOT use \`import\` or \`require\` — React and ReactDOM are provided as parameters
 - Define function components only (no class components)
 
 \`\`\`

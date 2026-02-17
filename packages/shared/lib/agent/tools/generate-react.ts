@@ -9,10 +9,17 @@ const BUILTIN_SPECIFIERS = new Set(['react', 'react-dom', 'react-dom/client']);
 const extractImportedPackages = (code: string): string[] => {
   const packages = new Set<string>();
   const importRegex = /import\s+[\s\S]+?\s+from\s+['"]([^'"./][^'"]*)['"]\s*;?/g;
+  const sideEffectRegex = /import\s+['"]([^'"./][^'"]*)['"]\s*;?/g;
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     const specifier = match[1];
-    // Get the package name (handle scoped packages like @scope/pkg)
+    const pkgName = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
+    if (!BUILTIN_SPECIFIERS.has(specifier) && !BUILTIN_SPECIFIERS.has(pkgName)) {
+      packages.add(pkgName);
+    }
+  }
+  while ((match = sideEffectRegex.exec(code)) !== null) {
+    const specifier = match[1];
     const pkgName = specifier.startsWith('@') ? specifier.split('/').slice(0, 2).join('/') : specifier.split('/')[0];
     if (!BUILTIN_SPECIFIERS.has(specifier) && !BUILTIN_SPECIFIERS.has(pkgName)) {
       packages.add(pkgName);
@@ -46,17 +53,18 @@ export const createGenerateReactTool = (ctx: ToolContext) =>
         }
       }
 
+      const finalDeps = resolvedDeps && Object.keys(resolvedDeps).length > 0 ? resolvedDeps : undefined;
       const artifact = await createArtifact({
         extensionId: ctx.extensionId,
         type: 'react-component',
         name,
         code,
         elementXPath: elementXPath || undefined,
-        dependencies: resolvedDeps,
+        dependencies: finalDeps,
         enabled: true,
       });
-      const depsInfo = resolvedDeps
-        ? ` Dependencies: ${Object.entries(resolvedDeps)
+      const depsInfo = finalDeps
+        ? ` Dependencies: ${Object.entries(finalDeps)
             .map(([k, v]) => `${k}@${v}`)
             .join(', ')}`
         : '';

@@ -422,10 +422,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           const reactUrl = `https://esm.sh/react@${REACT_VERSION}`;
           const reactDomUrl = `https://esm.sh/react-dom@${REACT_VERSION}/client?deps=react@${REACT_VERSION}`;
           const depUrls: Record<string, string> = {};
-          if (dependencies) {
-            for (const [pkg, version] of Object.entries(dependencies)) {
-              depUrls[pkg] = `https://esm.sh/${pkg}@${version}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
-            }
+          const depVersions = dependencies ?? {};
+          const basePkg = (s: string) => (s.startsWith('@') ? s.split('/').slice(0, 2).join('/') : s.split('/')[0]);
+          for (const [pkg, version] of Object.entries(depVersions)) {
+            depUrls[pkg] = `https://esm.sh/${pkg}@${version}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
           }
 
           // Parse import statements, strip them, and convert to __deps__ destructuring
@@ -435,8 +435,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             (_match: string, clause: string, specifier: string) => {
               // Skip react/react-dom — provided via runtime
               if (specifier === 'react' || specifier.startsWith('react-dom')) return '';
-              // Skip unknown specifiers (not in dependencies)
-              if (!depUrls[specifier]) return '';
+              // Handle subpath imports (e.g., 'date-fns/format') by resolving from base package
+              if (!depUrls[specifier]) {
+                const base = basePkg(specifier);
+                const version = depVersions[base];
+                if (version) {
+                  const subpath = specifier.slice(base.length);
+                  depUrls[specifier] =
+                    `https://esm.sh/${base}@${version}${subpath}?deps=react@${REACT_VERSION},react-dom@${REACT_VERSION}`;
+                } else {
+                  return '';
+                }
+              }
 
               const safeKey = JSON.stringify(specifier);
               clause = clause.trim();

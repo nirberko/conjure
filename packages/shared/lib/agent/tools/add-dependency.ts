@@ -10,7 +10,10 @@ export const resolvePackageVersion = async (
   const url = version ? `https://esm.sh/${packageName}@${version}` : `https://esm.sh/${packageName}`;
 
   try {
-    const response = await fetch(url, { method: 'HEAD', redirect: 'follow' });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const response = await fetch(url, { method: 'HEAD', redirect: 'follow', signal: controller.signal });
+    clearTimeout(timeout);
 
     if (!response.ok) {
       return { error: `Package "${packageName}" not found on esm.sh (status ${response.status})` };
@@ -28,7 +31,13 @@ export const resolvePackageVersion = async (
 
     return { version: versionMatch[1] };
   } catch (err) {
-    return { error: `Failed to resolve "${packageName}": ${err instanceof Error ? err.message : String(err)}` };
+    const message =
+      err instanceof DOMException && err.name === 'AbortError'
+        ? 'Request timed out'
+        : err instanceof Error
+          ? err.message
+          : String(err);
+    return { error: `Failed to resolve "${packageName}": ${message}` };
   }
 };
 
