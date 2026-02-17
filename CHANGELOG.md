@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/nirberko/conjure/compare/v1.2.0...v1.3.0) (2026-02-17)
+
+
+### Features
+
+* CSP-compatible ESM dependency loading with auto-resolve and UI badges ([#43](https://github.com/nirberko/conjure/issues/43)) ([759792c](https://github.com/nirberko/conjure/commit/759792cd739e8d7177329930b011c3fca970db88))
+
 # [1.2.0](https://github.com/nirberko/conjure/compare/v1.1.0...v1.2.0) (2026-02-17)
 
 
