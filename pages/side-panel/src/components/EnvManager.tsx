@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface EnvManagerProps {
   extensionId: string;
+  isActive?: boolean;
 }
 
-export const EnvManager = ({ extensionId }: EnvManagerProps) => {
+export const EnvManager = ({ extensionId, isActive }: EnvManagerProps) => {
   const [envVars, setEnvVars] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
@@ -30,8 +31,8 @@ export const EnvManager = ({ extensionId }: EnvManagerProps) => {
   }, [extensionId]);
 
   useEffect(() => {
-    loadEnvVars();
-  }, [loadEnvVars]);
+    if (isActive !== false) loadEnvVars();
+  }, [loadEnvVars, isActive]);
 
   const saveEnvVars = useCallback(
     async (updated: Record<string, string>) => {

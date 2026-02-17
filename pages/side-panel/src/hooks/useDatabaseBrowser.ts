@@ -6,7 +6,7 @@ export interface TableInfo {
   count: number;
 }
 
-export const useDatabaseBrowser = (extensionId: string) => {
+export const useDatabaseBrowser = (extensionId: string, isActive?: boolean) => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('');
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -47,14 +47,15 @@ export const useDatabaseBrowser = (extensionId: string) => {
     [pageSize],
   );
 
-  // Load tables on mount and when extensionId changes
+  // Load tables on mount, when extensionId changes, or when tab becomes active
   useEffect(() => {
+    if (isActive === false) return;
     setSelectedTable('');
     setPage(0);
     setRows([]);
     setTotalCount(0);
     fetchTables(extensionId);
-  }, [extensionId, fetchTables]);
+  }, [extensionId, fetchTables, isActive]);
 
   // Load rows when table or page changes
   useEffect(() => {

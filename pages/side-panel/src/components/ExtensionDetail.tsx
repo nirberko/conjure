@@ -70,12 +70,20 @@ export const ExtensionDetail = ({ extension, onBack }: ExtensionDetailProps) => 
         ))}
       </nav>
 
-      {/* Content */}
+      {/* Content — all tabs stay mounted, hidden with CSS to preserve state */}
       <div className="min-h-0 flex-1 overflow-hidden">
-        {activeSubTab === 'chat' && <AgentChatPanel extensionId={extension.id} />}
-        {activeSubTab === 'artifacts' && <ArtifactList extensionId={extension.id} />}
-        {activeSubTab === 'database' && <DatabaseBrowser extensionId={extension.id} />}
-        {activeSubTab === 'env' && <EnvManager extensionId={extension.id} />}
+        <div className="h-full" style={{ display: activeSubTab === 'chat' ? undefined : 'none' }}>
+          <AgentChatPanel extensionId={extension.id} />
+        </div>
+        <div className="h-full" style={{ display: activeSubTab === 'artifacts' ? undefined : 'none' }}>
+          <ArtifactList extensionId={extension.id} isActive={activeSubTab === 'artifacts'} />
+        </div>
+        <div className="h-full" style={{ display: activeSubTab === 'database' ? undefined : 'none' }}>
+          <DatabaseBrowser extensionId={extension.id} isActive={activeSubTab === 'database'} />
+        </div>
+        <div className="h-full" style={{ display: activeSubTab === 'env' ? undefined : 'none' }}>
+          <EnvManager extensionId={extension.id} isActive={activeSubTab === 'env'} />
+        </div>
       </div>
     </div>
   );

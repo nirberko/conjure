@@ -1,15 +1,23 @@
 import { ArtifactCard } from './ArtifactCard';
 import { WorkerDetail } from './WorkerDetail';
 import { t } from '@extension/i18n';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { WorkerStatus } from './ArtifactCard';
 import type { Artifact } from '@extension/shared';
 
 interface ArtifactListProps {
   extensionId: string;
+  isActive?: boolean;
 }
 
-export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
+export const ArtifactList = ({ extensionId, isActive }: ArtifactListProps) => {
+  const version = useMemo(() => {
+    try {
+      return chrome.runtime.getManifest().version;
+    } catch {
+      return 'dev';
+    }
+  }, []);
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [workerStatuses, setWorkerStatuses] = useState<Record<string, WorkerStatus>>({});
   const [loading, setLoading] = useState(true);
@@ -30,8 +38,8 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
   }, [extensionId]);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    if (isActive !== false) refresh();
+  }, [refresh, isActive]);
 
   const handleStartWorker = async (artifact: Artifact) => {
     await chrome.runtime.sendMessage({
@@ -111,7 +119,7 @@ export const ArtifactList = ({ extensionId }: ArtifactListProps) => {
                 {t('artifactListNodeActive')}
               </span>
             </div>
-            <span className="font-mono text-[9px] text-slate-700">v4.0.1-RC</span>
+            <span className="font-mono text-[9px] text-slate-700">v{version}</span>
           </div>
         </div>
       </footer>
