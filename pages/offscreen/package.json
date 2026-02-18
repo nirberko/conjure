@@ -1,6 +1,6 @@
 {
   "name": "@extension/offscreen",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "chrome extension - offscreen document for background worker execution",
   "type": "module",
   "private": true,

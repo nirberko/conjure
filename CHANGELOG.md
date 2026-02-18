@@ -1,3 +1,22 @@
+# [1.4.0](https://github.com/nirberko/conjure/compare/v1.3.0...v1.4.0) (2026-02-18)
+
+
+### Bug Fixes
+
+* address PR review comments for ESM dependencies ([ae6f081](https://github.com/nirberko/conjure/commit/ae6f08162a920ac4f4ee98583cb9bf60a76f53d8))
+* **e2e:** replace long-running evaluate with exposeFunction bridge to fix flaky test ([fb95fc2](https://github.com/nirberko/conjure/commit/fb95fc279174a947d5c4c6471438cb970dd7f1f9))
+
+
+### Features
+
+* **agent,content:** CSP-compatible ESM deps, auto-resolve imports, show deps in UI ([53e1bb9](https://github.com/nirberko/conjure/commit/53e1bb9dc35274d9fadffb8bc5272664cc707e52))
+* **agent:** add add_dependency tool for resolving npm packages from esm.sh ([b9f5d42](https://github.com/nirberko/conjure/commit/b9f5d42cdda0fdc05bff77b885efe8883131ae49))
+* **agent:** update system prompt with dependency and import map usage rules ([8bce600](https://github.com/nirberko/conjure/commit/8bce60008395a1666c1e496030a06e8ff9076f8b))
+* **content,agent:** add ESM module execution path and dependency support ([99b3153](https://github.com/nirberko/conjure/commit/99b31539511c5495620d62f4eb4100ff708abc4e))
+* **content:** add import map builder for ESM CDN dependencies ([f5da17c](https://github.com/nirberko/conjure/commit/f5da17c779881461d2e2eaccc4e5f497eb361a36))
+* **content:** use batch injection on page load for import map ordering ([ee5d7da](https://github.com/nirberko/conjure/commit/ee5d7dab7a347350fdbe7de7dd9e07ee3a6d51eb))
+* **types:** add dependencies field to Artifact interface ([806ee88](https://github.com/nirberko/conjure/commit/806ee88956a46a2228657303b3c822b4bebec805))
+
 # [1.3.0](https://github.com/nirberko/conjure/compare/v1.2.0...v1.3.0) (2026-02-17)
 
 
