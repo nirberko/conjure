@@ -1,10 +1,10 @@
-name: Release & Publish to Chrome Web Store
+name: Release
 
 on:
   workflow_dispatch:
 
 concurrency:
-  group: release-publish
+  group: release
 
 permissions:
   contents: write
@@ -35,17 +35,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HUSKY: '0'
         run: npx semantic-release
-      - name: Find extension zip
-        id: find-zip
-        run: echo "path=$(ls dist-zip/*.zip)" >> "$GITHUB_OUTPUT"
-        if: hashFiles('dist-zip/*.zip') != ''
-      - name: Publish to Chrome Web Store
-        if: steps.find-zip.outputs.path != ''
-        uses: mobilefirstllc/cws-publish@latest
-        with:
-          action: 'publish'
-          client_id: ${{ secrets.GOOGLE_CLIENT_ID }}
-          client_secret: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          refresh_token: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
-          extension_id: ${{ secrets.CHROME_EXTENSION_ID }}
-          zip_file: ${{ steps.find-zip.outputs.path }}
