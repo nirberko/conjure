@@ -1,0 +1,16 @@
+{
+  "name": "e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.51.0",
+    "@types/chrome": "^0.0.304",
+    "@types/node": "^22.0.0",
+    "dotenv": "^16.4.0"
+  }
+}
