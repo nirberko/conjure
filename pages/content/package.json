@@ -24,7 +24,7 @@
     "@extension/shared": "workspace:*",
     "@extension/env": "workspace:*",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@extension/hmr": "workspace:*",
