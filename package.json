@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react-dom": "^19.2.4",
     "sucrase": "^3.35.1"
   },
   "devDependencies": {
@@ -50,7 +50,7 @@
     "@types/eslint-plugin-jsx-a11y": "^6.10.0",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.5",
-    "@types/react-dom": "^19.1.5",
+    "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
